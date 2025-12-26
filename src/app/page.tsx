@@ -3,24 +3,28 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Film, Tv, Eye, List } from "lucide-react"
+import { Plus, Film, Tv, Eye, List, Popcorn } from "lucide-react"
 import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { UserMenu } from "@/components/auth/user-menu"
+import { AddEntryModal } from "@/components/forms/add-entry-modal"
 import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries"
 import { useLists } from "@/hooks/use-lists"
+import { entryApi } from "@/lib/api/fetchers"
 import { PLATFORMS, MEDIA_TYPE_OPTIONS } from "@/lib/constants"
-import type { DashboardFilterState, MediaType } from "@/types"
+import type { DashboardFilterState, MediaType, EntryFormData } from "@/types"
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
 
 const Home = () => {
   const { data: session } = useSession()
-  const { entries, isLoading: isEntriesLoading } = useAllEntries()
+  const { entries, isLoading: isEntriesLoading, refetch } = useAllEntries()
   const { lists, isLoading: isListsLoading } = useLists()
+
+  const [isAddEntryOpen, setIsAddEntryOpen] = useState(false)
 
   const [filters, setFilters] = useState<DashboardFilterState>({
     search: "",
@@ -88,9 +92,16 @@ const Home = () => {
     })
   }
 
+  const handleAddEntry = async (listId: string, data: EntryFormData) => {
+    await entryApi.create(listId, data)
+    refetch()
+  }
+
   if (!session) {
     return null
   }
+
+  const defaultListId = lists[0]?._id
 
   const isLoading = isEntriesLoading || isListsLoading
 
@@ -98,8 +109,22 @@ const Home = () => {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold">Watched</h1>
           <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900">
+              <Popcorn className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">Watched</h1>
+              <p className="text-xs text-zinc-500">
+                Track movies & TV shows you&apos;re watching together
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button size="sm" onClick={() => setIsAddEntryOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Entry
+            </Button>
             <Link href="/lists">
               <Button variant="outline" size="sm">
                 <List className="mr-2 h-4 w-4" />
@@ -297,6 +322,14 @@ const Home = () => {
           </div>
         )}
       </main>
+
+      <AddEntryModal
+        open={isAddEntryOpen}
+        onOpenChange={setIsAddEntryOpen}
+        onSubmit={handleAddEntry}
+        lists={lists}
+        defaultListId={defaultListId}
+      />
     </div>
   )
 }

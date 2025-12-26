@@ -20,13 +20,15 @@ import type {
   TMDBMovieDetails,
   TMDBTVDetails,
   EntryFormData,
+  ListWithRole,
 } from "@/types"
 
 interface AddEntryModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: EntryFormData) => Promise<void>
-  listId: string
+  onSubmit: (listId: string, data: EntryFormData) => Promise<void>
+  lists: ListWithRole[]
+  defaultListId?: string
 }
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
@@ -35,9 +37,12 @@ export const AddEntryModal = ({
   open,
   onOpenChange,
   onSubmit,
+  lists,
+  defaultListId,
 }: AddEntryModalProps) => {
   const [selectedResult, setSelectedResult] =
     useState<TMDBSearchResult | null>(null)
+  const [selectedListId, setSelectedListId] = useState(defaultListId ?? "")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [platform, setPlatform] = useState("")
@@ -68,6 +73,7 @@ export const AddEntryModal = ({
 
   const handleClear = () => {
     setSelectedResult(null)
+    setSelectedListId(defaultListId ?? lists[0]?._id ?? "")
     setStartDate("")
     setEndDate("")
     setPlatform("")
@@ -82,7 +88,7 @@ export const AddEntryModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedResult || !details || !startDate) return
+    if (!selectedResult || !details || !startDate || !selectedListId) return
 
     setIsSubmitting(true)
     setError("")
@@ -128,7 +134,7 @@ export const AddEntryModal = ({
         notes: notes || undefined,
       }
 
-      await onSubmit(formData)
+      await onSubmit(selectedListId, formData)
       handleClose()
     } catch {
       setError("Failed to add entry")
@@ -221,6 +227,26 @@ export const AddEntryModal = ({
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label htmlFor="list" className="text-sm font-medium">
+                  List *
+                </label>
+                <select
+                  id="list"
+                  value={selectedListId}
+                  onChange={(e) => setSelectedListId(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                  required
+                >
+                  <option value="">Select list...</option>
+                  {lists.map((list) => (
+                    <option key={list._id} value={list._id}>
+                      {list.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label htmlFor="startDate" className="text-sm font-medium">
@@ -292,7 +318,12 @@ export const AddEntryModal = ({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !startDate || isLoadingDetails}
+                disabled={
+                  isSubmitting ||
+                  !selectedListId ||
+                  !startDate ||
+                  isLoadingDetails
+                }
               >
                 {isSubmitting ? "Adding..." : "Add Entry"}
               </Button>

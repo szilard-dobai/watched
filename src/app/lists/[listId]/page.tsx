@@ -37,7 +37,7 @@ const ListPage = () => {
     }
   }, [error, router])
 
-  const handleAddEntry = async (data: EntryFormData) => {
+  const handleAddEntry = async (_listId: string, data: EntryFormData) => {
     await addEntry(data)
   }
 
@@ -160,7 +160,8 @@ const ListPage = () => {
         open={isAddEntryOpen}
         onOpenChange={setIsAddEntryOpen}
         onSubmit={handleAddEntry}
-        listId={listId}
+        lists={list ? [list] : []}
+        defaultListId={listId}
       />
 
       {watchModalEntry && (

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Textarea } from "@/components/ui/textarea"
 import { TMDBSearch } from "@/components/forms/tmdb-search"
 import { useTmdbDetails } from "@/hooks/use-tmdb-details"
 import { PLATFORMS } from "@/lib/constants"
@@ -43,8 +52,8 @@ export const AddEntryModal = ({
   const [selectedResult, setSelectedResult] =
     useState<TMDBSearchResult | null>(null)
   const [selectedListId, setSelectedListId] = useState(defaultListId ?? "")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [platform, setPlatform] = useState("")
   const [notes, setNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -74,8 +83,8 @@ export const AddEntryModal = ({
   const handleClear = () => {
     setSelectedResult(null)
     setSelectedListId(defaultListId ?? lists[0]?._id ?? "")
-    setStartDate("")
-    setEndDate("")
+    setStartDate(undefined)
+    setEndDate(undefined)
     setPlatform("")
     setNotes("")
     setError("")
@@ -128,8 +137,8 @@ export const AddEntryModal = ({
               logoPath: n.logo_path,
             }))
           : undefined,
-        startDate,
-        endDate: endDate || undefined,
+        startDate: format(startDate, "yyyy-MM-dd"),
+        endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
         platform: platform || undefined,
         notes: notes || undefined,
       }
@@ -228,80 +237,62 @@ export const AddEntryModal = ({
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="list" className="text-sm font-medium">
-                  List *
-                </label>
-                <select
-                  id="list"
-                  value={selectedListId}
-                  onChange={(e) => setSelectedListId(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-                  required
-                >
-                  <option value="">Select list...</option>
-                  {lists.map((list) => (
-                    <option key={list._id} value={list._id}>
-                      {list.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-sm font-medium">List *</label>
+                <Select value={selectedListId} onValueChange={setSelectedListId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select list..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lists.map((list) => (
+                      <SelectItem key={list._id} value={list._id}>
+                        {list.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label htmlFor="startDate" className="text-sm font-medium">
-                    Start Date *
-                  </label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    required
+                  <label className="text-sm font-medium">Start Date *</label>
+                  <DatePicker
+                    date={startDate}
+                    onDateChange={setStartDate}
+                    placeholder="Pick start date"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="endDate" className="text-sm font-medium">
-                    End Date
-                  </label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                  <label className="text-sm font-medium">End Date</label>
+                  <DatePicker
+                    date={endDate}
+                    onDateChange={setEndDate}
+                    placeholder="Pick end date"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="platform" className="text-sm font-medium">
-                  Platform
-                </label>
-                <select
-                  id="platform"
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-                >
-                  <option value="">Select platform...</option>
-                  {PLATFORMS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-sm font-medium">Platform</label>
+                <Select value={platform} onValueChange={setPlatform}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select platform..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PLATFORMS.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="notes" className="text-sm font-medium">
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
+                <label className="text-sm font-medium">Notes</label>
+                <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  className="flex w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
                   placeholder="Any thoughts or notes..."
                 />
               </div>

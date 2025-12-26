@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { UserMenu } from "@/components/auth/user-menu"
 import { AddEntryModal } from "@/components/forms/add-entry-modal"
 import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries"
@@ -195,55 +202,71 @@ const Home = () => {
             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
             className="w-full sm:w-64"
           />
-          <select
+          <Select
             value={filters.listId}
-            onChange={(e) => setFilters((f) => ({ ...f, listId: e.target.value }))}
-            className="h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            onValueChange={(value) => setFilters((f) => ({ ...f, listId: value }))}
           >
-            <option value="all">All Lists</option>
-            {lists.map((list) => (
-              <option key={list._id} value={list._id}>
-                {list.name}
-              </option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="All Lists" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Lists</SelectItem>
+              {lists.map((list) => (
+                <SelectItem key={list._id} value={list._id}>
+                  {list.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={filters.mediaType}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, mediaType: e.target.value as MediaType | "all" }))
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, mediaType: value as MediaType | "all" }))
             }
-            className="h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           >
-            {MEDIA_TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              {MEDIA_TYPE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={filters.genre}
-            onChange={(e) => setFilters((f) => ({ ...f, genre: e.target.value }))}
-            className="h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            onValueChange={(value) => setFilters((f) => ({ ...f, genre: value }))}
           >
-            <option value="all">All Genres</option>
-            {allGenres.map((genre) => (
-              <option key={genre} value={genre}>
-                {genre}
-              </option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="All Genres" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Genres</SelectItem>
+              {allGenres.map((genre) => (
+                <SelectItem key={genre} value={genre}>
+                  {genre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={filters.platform}
-            onChange={(e) => setFilters((f) => ({ ...f, platform: e.target.value }))}
-            className="h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            onValueChange={(value) => setFilters((f) => ({ ...f, platform: value }))}
           >
-            <option value="all">All Platforms</option>
-            {PLATFORMS.map((platform) => (
-              <option key={platform} value={platform}>
-                {platform}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="All Platforms" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Platforms</SelectItem>
+              {PLATFORMS.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (

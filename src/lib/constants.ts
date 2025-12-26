@@ -1,14 +1,3 @@
-export const STATUS_OPTIONS = [
-  { value: "watching", label: "Watching" },
-  { value: "completed", label: "Completed" },
-  { value: "want_to_watch", label: "Want to Watch" },
-] as const;
-
-export const TYPE_OPTIONS = [
-  { value: "movie", label: "Movie" },
-  { value: "tv_show", label: "TV Show" },
-] as const;
-
 export const PLATFORMS = [
   "Netflix",
   "Hulu",
@@ -18,15 +7,34 @@ export const PLATFORMS = [
   "Apple TV+",
   "Paramount+",
   "Peacock",
+  "Cinema",
+  "Blu-ray/DVD",
   "Other",
-] as const;
+] as const
 
-export const FILTER_STATUS_OPTIONS = [
-  { value: "all", label: "All Status" },
-  ...STATUS_OPTIONS,
-] as const;
-
-export const FILTER_TYPE_OPTIONS = [
+export const MEDIA_TYPE_OPTIONS = [
   { value: "all", label: "All Types" },
-  ...TYPE_OPTIONS,
-] as const;
+  { value: "movie", label: "Movies" },
+  { value: "tv", label: "TV Shows" },
+] as const
+
+export const GENRES = [
+  "Action",
+  "Adventure",
+  "Animation",
+  "Comedy",
+  "Crime",
+  "Documentary",
+  "Drama",
+  "Family",
+  "Fantasy",
+  "History",
+  "Horror",
+  "Music",
+  "Mystery",
+  "Romance",
+  "Science Fiction",
+  "Thriller",
+  "War",
+  "Western",
+] as const

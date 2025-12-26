@@ -30,7 +30,7 @@ vi.mock("mongodb", () => {
   };
 });
 
-describe("mongodb", () => {
+describe("db", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv("MONGODB_URI", "");
@@ -50,7 +50,7 @@ describe("mongodb", () => {
     it("throws error when MONGODB_URI is not set", async () => {
       vi.stubEnv("MONGODB_DB", "test-db");
 
-      const { default: getDb } = await import("./mongodb");
+      const { default: getDb } = await import(".");
 
       expect(() => getDb()).toThrow("Please add your MONGODB_URI env variable");
     });
@@ -58,7 +58,7 @@ describe("mongodb", () => {
     it("throws error when MONGODB_DB is not set", async () => {
       vi.stubEnv("MONGODB_URI", "mongodb://localhost:27017");
 
-      const { default: getDb } = await import("./mongodb");
+      const { default: getDb } = await import(".");
 
       expect(() => getDb()).toThrow("Please add your MONGODB_DB env variable");
     });
@@ -68,7 +68,7 @@ describe("mongodb", () => {
       vi.stubEnv("MONGODB_DB", "test-db");
       vi.stubEnv("NODE_ENV", "production");
 
-      const { default: getDb } = await import("./mongodb");
+      const { default: getDb } = await import(".");
 
       const db = await getDb();
 
@@ -88,7 +88,7 @@ describe("mongodb", () => {
       vi.stubEnv("MONGODB_DB", "test-db");
       vi.stubEnv("NODE_ENV", "production");
 
-      const { default: getDb } = await import("./mongodb");
+      const { default: getDb } = await import(".");
 
       const db1 = await getDb();
       const db2 = await getDb();
@@ -102,7 +102,7 @@ describe("mongodb", () => {
       vi.stubEnv("MONGODB_DB", "test-db");
       vi.stubEnv("NODE_ENV", "development");
 
-      const { default: getDb } = await import("./mongodb");
+      const { default: getDb } = await import(".");
 
       await getDb();
 
@@ -118,7 +118,7 @@ describe("mongodb", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (global as any)._mongoDbPromise = Promise.resolve(cachedDb);
 
-      const { default: getDb } = await import("./mongodb");
+      const { default: getDb } = await import(".");
 
       const db = await getDb();
 

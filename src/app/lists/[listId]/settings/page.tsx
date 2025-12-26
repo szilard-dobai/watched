@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/card"
 import { InviteLink } from "@/components/lists/invite-link"
 import { MemberList } from "@/components/lists/member-list"
-import type { ListWithRole } from "@/types"
+import { useListDetail } from "@/hooks/use-list-detail"
+import { useLists } from "@/hooks/use-lists"
 
 const ListSettingsPage = () => {
   const router = useRouter()
@@ -24,74 +25,33 @@ const ListSettingsPage = () => {
   const listId = params.listId as string
   const { data: session } = useSession()
 
-  const [list, setList] = useState<ListWithRole | null>(null)
+  const { list, isLoading, error, updateList, isUpdating } =
+    useListDetail(listId)
+  const { deleteList } = useLists()
   const [name, setName] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
+  const [nameInitialized, setNameInitialized] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    const fetchList = async () => {
-      try {
-        const response = await fetch(`/api/lists/${listId}`)
-        if (!response.ok) {
-          router.push("/lists")
-          return
-        }
-        const data = await response.json()
-        if (data.role !== "owner") {
-          router.push(`/lists/${listId}`)
-          return
-        }
-        setList(data)
-        setName(data.name)
-      } catch {
-        router.push("/lists")
-      } finally {
-        setIsLoading(false)
-      }
+    if (error) {
+      router.push("/lists")
+    } else if (list && list.role !== "owner") {
+      router.push(`/lists/${listId}`)
     }
+  }, [error, list, listId, router])
 
-    fetchList()
-  }, [listId, router])
+  if (list && !nameInitialized) {
+    setName(list.name)
+    setNameInitialized(true)
+  }
 
   const handleSave = async () => {
     if (!name.trim() || name === list?.name) return
-
-    setIsSaving(true)
-    try {
-      const response = await fetch(`/api/lists/${listId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      })
-
-      if (response.ok) {
-        const updated = await response.json()
-        setList((prev) => (prev ? { ...prev, name: updated.name } : null))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    await updateList({ name: name.trim() })
   }
 
   const handleRegenerateInvite = async () => {
-    try {
-      const response = await fetch(`/api/lists/${listId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ regenerateInviteCode: true }),
-      })
-
-      if (response.ok) {
-        const updated = await response.json()
-        setList((prev) =>
-          prev ? { ...prev, inviteCode: updated.inviteCode } : null
-        )
-      }
-    } catch {
-      console.error("Failed to regenerate invite code")
-    }
+    await updateList({ regenerateInviteCode: true })
   }
 
   const handleDelete = async () => {
@@ -104,17 +64,11 @@ const ListSettingsPage = () => {
     }
 
     setIsDeleting(true)
-    try {
-      const response = await fetch(`/api/lists/${listId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        router.push("/lists")
-      }
-    } finally {
-      setIsDeleting(false)
+    const success = await deleteList(listId)
+    if (success) {
+      router.push("/lists")
     }
+    setIsDeleting(false)
   }
 
   if (isLoading) {
@@ -163,9 +117,9 @@ const ListSettingsPage = () => {
               </div>
               <Button
                 onClick={handleSave}
-                disabled={isSaving || !name.trim() || name === list.name}
+                disabled={isUpdating || !name.trim() || name === list.name}
               >
-                {isSaving ? "Saving..." : "Save Changes"}
+                {isUpdating ? "Saving..." : "Save Changes"}
               </Button>
             </CardContent>
           </Card>

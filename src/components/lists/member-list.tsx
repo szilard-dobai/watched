@@ -1,19 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Crown, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useListMembers } from "@/hooks/use-list-members"
 import type { ListRole } from "@/types"
-
-interface Member {
-  _id: string
-  userId: string
-  role: ListRole
-  joinedAt: string
-  name: string
-  email: string
-}
 
 interface MemberListProps {
   listId: string
@@ -26,45 +17,11 @@ export const MemberList = ({
   currentUserRole,
   currentUserId,
 }: MemberListProps) => {
-  const [members, setMembers] = useState<Member[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [removingId, setRemovingId] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const response = await fetch(`/api/lists/${listId}/members`)
-        if (response.ok) {
-          const data = await response.json()
-          setMembers(data)
-        }
-      } catch {
-        console.error("Failed to fetch members")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchMembers()
-  }, [listId])
+  const { members, isLoading, removeMember, removingUserId } =
+    useListMembers(listId)
 
   const handleRemove = async (userId: string) => {
-    setRemovingId(userId)
-    try {
-      const response = await fetch(`/api/lists/${listId}/members`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      })
-
-      if (response.ok) {
-        setMembers((prev) => prev.filter((m) => m.userId !== userId))
-      }
-    } catch {
-      console.error("Failed to remove member")
-    } finally {
-      setRemovingId(null)
-    }
+    await removeMember(userId)
   }
 
   if (isLoading) {
@@ -106,7 +63,7 @@ export const MemberList = ({
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => handleRemove(member.userId)}
-                  disabled={removingId === member.userId}
+                  disabled={removingUserId === member.userId}
                   className="text-red-600 hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-950"
                 >
                   <Trash2 className="h-4 w-4" />

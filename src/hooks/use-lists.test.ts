@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest"
 import { renderHook, waitFor, act } from "@testing-library/react"
 import { useLists } from "./use-lists"
 import { mockLists } from "@/test/mocks/handlers"
+import { createWrapper } from "@/test/test-utils"
 import type { ListWithRole } from "@/types"
 
 describe("useLists", () => {
   it("fetches lists on mount", async () => {
-    const { result } = renderHook(() => useLists())
+    const { result } = renderHook(() => useLists(), { wrapper: createWrapper() })
 
     expect(result.current.isLoading).toBe(true)
 
@@ -20,7 +21,7 @@ describe("useLists", () => {
   })
 
   it("creates a new list and returns it", async () => {
-    const { result } = renderHook(() => useLists())
+    const { result } = renderHook(() => useLists(), { wrapper: createWrapper() })
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)

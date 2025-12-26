@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest"
 import { renderHook, waitFor } from "@testing-library/react"
 import { useAllEntries } from "./use-all-entries"
 import { mockEntries } from "@/test/mocks/handlers"
+import { createWrapper } from "@/test/test-utils"
 
 describe("useAllEntries", () => {
   it("fetches entries from all lists on mount", async () => {
-    const { result } = renderHook(() => useAllEntries())
+    const { result } = renderHook(() => useAllEntries(), {
+      wrapper: createWrapper(),
+    })
 
     expect(result.current.isLoading).toBe(true)
 
@@ -18,7 +21,9 @@ describe("useAllEntries", () => {
   })
 
   it("includes list name with each entry", async () => {
-    const { result } = renderHook(() => useAllEntries())
+    const { result } = renderHook(() => useAllEntries(), {
+      wrapper: createWrapper(),
+    })
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
@@ -31,7 +36,9 @@ describe("useAllEntries", () => {
   })
 
   it("includes entries from multiple lists", async () => {
-    const { result } = renderHook(() => useAllEntries())
+    const { result } = renderHook(() => useAllEntries(), {
+      wrapper: createWrapper(),
+    })
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)

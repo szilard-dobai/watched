@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
+import { useJoinList } from "@/hooks/use-join-list"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -19,10 +20,14 @@ const JoinListPage = () => {
   const inviteCode = params.inviteCode as string
   const { data: session, isPending } = useSession()
 
-  const [listName, setListName] = useState<string | null>(null)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isJoining, setIsJoining] = useState(false)
+  const {
+    listName,
+    isLoading,
+    error,
+    join,
+    isJoining,
+    joinError,
+  } = useJoinList(inviteCode, !isPending && !!session)
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -30,59 +35,14 @@ const JoinListPage = () => {
     }
   }, [session, isPending, router, inviteCode])
 
-  useEffect(() => {
-    const fetchListInfo = async () => {
-      if (!session) return
-
-      setIsLoading(true)
-      try {
-        const response = await fetch(`/api/lists/join?inviteCode=${inviteCode}`, {
-          method: "GET",
-        })
-
-        if (!response.ok) {
-          const data = await response.json()
-          setError(data.error ?? "Invalid invite link")
-          return
-        }
-
-        const data = await response.json()
-        setListName(data.name)
-      } catch {
-        setError("Failed to load list information")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchListInfo()
-  }, [session, inviteCode])
-
   const handleJoin = async () => {
-    setIsJoining(true)
-    setError("")
-
-    try {
-      const response = await fetch("/api/lists/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteCode }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error ?? "Failed to join list")
-        return
-      }
-
-      router.push(`/lists/${data._id}`)
-    } catch {
-      setError("An unexpected error occurred")
-    } finally {
-      setIsJoining(false)
+    const result = await join()
+    if (result) {
+      router.push(`/lists/${result._id}`)
     }
   }
+
+  const displayError = error ?? joinError
 
   if (isPending || isLoading) {
     return (
@@ -96,7 +56,7 @@ const JoinListPage = () => {
     )
   }
 
-  if (error) {
+  if (displayError) {
     return (
       <main className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -104,7 +64,9 @@ const JoinListPage = () => {
             <CardTitle>Unable to Join</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {displayError}
+            </p>
           </CardContent>
           <CardFooter>
             <Button onClick={() => router.push("/")} variant="outline">

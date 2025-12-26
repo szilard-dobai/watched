@@ -10,8 +10,9 @@ import { InviteLink } from "@/components/lists/invite-link"
 import { EntryCard } from "@/components/dashboard/entry-card"
 import { AddEntryModal } from "@/components/forms/add-entry-modal"
 import { AddWatchModal } from "@/components/forms/add-watch-modal"
+import { useListDetail } from "@/hooks/use-list-detail"
 import { useEntries } from "@/hooks/use-entries"
-import type { ListWithRole, Entry, EntryFormData } from "@/types"
+import type { Entry, EntryFormData } from "@/types"
 
 const ListPage = () => {
   const router = useRouter()
@@ -19,31 +20,22 @@ const ListPage = () => {
   const listId = params.listId as string
   const { data: session } = useSession()
 
-  const [list, setList] = useState<ListWithRole | null>(null)
-  const [isListLoading, setIsListLoading] = useState(true)
+  const { list, isLoading: isListLoading, error } = useListDetail(listId)
   const [isAddEntryOpen, setIsAddEntryOpen] = useState(false)
   const [watchModalEntry, setWatchModalEntry] = useState<Entry | null>(null)
-  const { entries, isLoading: isEntriesLoading, addEntry, addWatch, deleteEntry } = useEntries(listId)
+  const {
+    entries,
+    isLoading: isEntriesLoading,
+    addEntry,
+    addWatch,
+    deleteEntry,
+  } = useEntries(listId)
 
   useEffect(() => {
-    const fetchList = async () => {
-      try {
-        const response = await fetch(`/api/lists/${listId}`)
-        if (!response.ok) {
-          router.push("/lists")
-          return
-        }
-        const data = await response.json()
-        setList(data)
-      } catch {
-        router.push("/lists")
-      } finally {
-        setIsListLoading(false)
-      }
+    if (error) {
+      router.push("/lists")
     }
-
-    fetchList()
-  }, [listId, router])
+  }, [error, router])
 
   const handleAddEntry = async (data: EntryFormData) => {
     await addEntry(data)
@@ -91,7 +83,9 @@ const ListPage = () => {
     if (!aWatch && !bWatch) return 0
     if (!aWatch) return 1
     if (!bWatch) return -1
-    return new Date(bWatch.addedAt).getTime() - new Date(aWatch.addedAt).getTime()
+    return (
+      new Date(bWatch.addedAt).getTime() - new Date(aWatch.addedAt).getTime()
+    )
   })
 
   return (
@@ -109,8 +103,8 @@ const ListPage = () => {
             <div>
               <h1 className="text-2xl font-bold">{list.name}</h1>
               <p className="text-sm text-zinc-500">
-                {list.memberCount} {list.memberCount === 1 ? "member" : "members"} •{" "}
-                {entries.length} {entries.length === 1 ? "entry" : "entries"}
+                {list.memberCount} {list.memberCount === 1 ? "member" : "members"}{" "}
+                • {entries.length} {entries.length === 1 ? "entry" : "entries"}
               </p>
             </div>
             <div className="flex gap-2">

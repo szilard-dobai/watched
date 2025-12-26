@@ -1,91 +1,75 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/lib/query-keys"
+import { listApi } from "@/lib/api/fetchers"
 import type { ListWithRole } from "@/types"
 
 export const useLists = () => {
-  const [lists, setLists] = useState<ListWithRole[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  const fetchLists = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
+  const {
+    data: lists = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.lists.all,
+    queryFn: listApi.getAll,
+  })
 
-    try {
-      const response = await fetch("/api/lists")
-      if (!response.ok) {
-        throw new Error("Failed to fetch lists")
-      }
-      const data = await response.json()
-      setLists(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  const createMutation = useMutation({
+    mutationFn: listApi.create,
+    onSuccess: (newList) => {
+      queryClient.setQueryData<ListWithRole[]>(queryKeys.lists.all, (old) =>
+        old ? [...old, newList] : [newList]
+      )
+    },
+  })
 
-  useEffect(() => {
-    fetchLists()
-  }, [fetchLists])
+  const leaveMutation = useMutation({
+    mutationFn: listApi.leave,
+    onSuccess: (_, listId) => {
+      queryClient.setQueryData<ListWithRole[]>(queryKeys.lists.all, (old) =>
+        old ? old.filter((l) => l._id !== listId) : []
+      )
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.all })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: listApi.delete,
+    onSuccess: (_, listId) => {
+      queryClient.setQueryData<ListWithRole[]>(queryKeys.lists.all, (old) =>
+        old ? old.filter((l) => l._id !== listId) : []
+      )
+      queryClient.removeQueries({ queryKey: queryKeys.entries.byList(listId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.all })
+    },
+  })
 
   const createList = async (name: string): Promise<ListWithRole | null> => {
     try {
-      const response = await fetch("/api/lists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error ?? "Failed to create list")
-      }
-
-      const newList = await response.json()
-      setLists((prev) => [...prev, newList])
-      return newList
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      return await createMutation.mutateAsync(name)
+    } catch {
       return null
     }
   }
 
   const leaveList = async (listId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/lists/${listId}/leave`, {
-        method: "POST",
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error ?? "Failed to leave list")
-      }
-
-      setLists((prev) => prev.filter((l) => l._id !== listId))
+      await leaveMutation.mutateAsync(listId)
       return true
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+    } catch {
       return false
     }
   }
 
   const deleteList = async (listId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/lists/${listId}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error ?? "Failed to delete list")
-      }
-
-      setLists((prev) => prev.filter((l) => l._id !== listId))
+      await deleteMutation.mutateAsync(listId)
       return true
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+    } catch {
       return false
     }
   }
@@ -93,8 +77,8 @@ export const useLists = () => {
   return {
     lists,
     isLoading,
-    error,
-    refetch: fetchLists,
+    error: error instanceof Error ? error.message : null,
+    refetch,
     createList,
     leaveList,
     deleteList,

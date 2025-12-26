@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { TMDBSearch } from "@/components/forms/tmdb-search"
+import { useTmdbDetails } from "@/hooks/use-tmdb-details"
 import { PLATFORMS } from "@/lib/constants"
 import type {
   TMDBSearchResult,
@@ -37,10 +38,6 @@ export const AddEntryModal = ({
 }: AddEntryModalProps) => {
   const [selectedResult, setSelectedResult] =
     useState<TMDBSearchResult | null>(null)
-  const [details, setDetails] = useState<TMDBMovieDetails | TMDBTVDetails | null>(
-    null
-  )
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [platform, setPlatform] = useState("")
@@ -48,29 +45,29 @@ export const AddEntryModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
-  const handleSelect = async (result: TMDBSearchResult) => {
-    setSelectedResult(result)
-    setIsLoadingDetails(true)
-    setError("")
+  const {
+    details,
+    isLoading: isLoadingDetails,
+    error: detailsError,
+  } = useTmdbDetails(
+    selectedResult?.media_type ?? null,
+    selectedResult?.id ?? null
+  )
 
-    try {
-      const response = await fetch(
-        `/api/tmdb/${result.media_type}/${result.id}`
-      )
-      if (!response.ok) throw new Error("Failed to fetch details")
-      const data = await response.json()
-      setDetails(data)
-    } catch {
+  useEffect(() => {
+    if (detailsError) {
       setError("Failed to load details")
       setSelectedResult(null)
-    } finally {
-      setIsLoadingDetails(false)
     }
+  }, [detailsError])
+
+  const handleSelect = (result: TMDBSearchResult) => {
+    setSelectedResult(result)
+    setError("")
   }
 
   const handleClear = () => {
     setSelectedResult(null)
-    setDetails(null)
     setStartDate("")
     setEndDate("")
     setPlatform("")

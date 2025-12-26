@@ -1,19 +1,25 @@
-import type { Collection, Document } from "mongodb"
-import getDb from "."
+import type { Collection } from "mongodb";
+import type { User, DbList, DbListMembership, DbEntry } from "@/types";
+import getDb from ".";
 
-export const getListsCollection = async (): Promise<Collection<Document>> => {
-  const db = await getDb()
-  return db.collection("lists")
-}
+export const getListsCollection = async (): Promise<Collection<DbList>> => {
+  const db = await getDb();
+  return db.collection<DbList>("lists");
+};
 
 export const getMembershipsCollection = async (): Promise<
-  Collection<Document>
+  Collection<DbListMembership>
 > => {
-  const db = await getDb()
-  return db.collection("listMemberships")
-}
+  const db = await getDb();
+  return db.collection<DbListMembership>("listMemberships");
+};
 
-export const getEntriesCollection = async (): Promise<Collection<Document>> => {
-  const db = await getDb()
-  return db.collection("entries")
-}
+export const getUserCollection = async (): Promise<Collection<User>> => {
+  const db = await getDb();
+  return db.collection<User>("user");
+};
+
+export const getEntriesCollection = async (): Promise<Collection<DbEntry>> => {
+  const db = await getDb();
+  return db.collection<DbEntry>("entries");
+};

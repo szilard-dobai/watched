@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GET, POST } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId = "507f1f77bcf86cd799439011"
 
@@ -10,7 +10,7 @@ const mockEntries = [
   {
     _id: new ObjectId(),
     listId: new ObjectId(listId),
-    addedByUserId: "user-123",
+    addedByUserId: mockUserId,
     tmdbId: 550,
     mediaType: "movie",
     title: "Fight Club",

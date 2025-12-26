@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GET, PATCH, DELETE } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId = "507f1f77bcf86cd799439011"
 const entryId = "507f1f77bcf86cd799439022"
@@ -10,14 +10,14 @@ const entryId = "507f1f77bcf86cd799439022"
 const mockEntry = {
   _id: new ObjectId(entryId),
   listId: new ObjectId(listId),
-  addedByUserId: "user-123",
+  addedByUserId: mockUserId,
   tmdbId: 550,
   mediaType: "movie",
   title: "Fight Club",
   originalTitle: "Fight Club",
   overview: "An insomniac office worker...",
   posterPath: "/poster.jpg",
-  watches: [{ _id: "watch-1", startDate: "2024-01-01", addedByUserId: "user-123" }],
+  watches: [{ _id: "watch-1", startDate: "2024-01-01", addedByUserId: mockUserId }],
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
 }

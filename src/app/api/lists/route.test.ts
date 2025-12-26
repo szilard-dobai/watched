@@ -2,18 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GET, POST } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const mockMemberships = [
-  { _id: new ObjectId(), userId: "user-123", listId: new ObjectId("507f1f77bcf86cd799439011"), role: "owner" },
-  { _id: new ObjectId(), userId: "user-123", listId: new ObjectId("507f1f77bcf86cd799439012"), role: "member" },
+  { _id: new ObjectId(), userId: mockUserId, listId: new ObjectId("507f1f77bcf86cd799439011"), role: "owner" },
+  { _id: new ObjectId(), userId: mockUserId, listId: new ObjectId("507f1f77bcf86cd799439012"), role: "member" },
 ]
 
 const mockLists = [
   {
     _id: new ObjectId("507f1f77bcf86cd799439011"),
     name: "My Movies",
-    ownerId: "user-123",
+    ownerId: mockUserId,
     inviteCode: "abc123",
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
@@ -113,7 +113,7 @@ describe("/api/lists", () => {
       const insertedList = {
         _id: new ObjectId(),
         name: "New List",
-        ownerId: "user-123",
+        ownerId: mockUserId,
         inviteCode: "newinvite123",
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
@@ -153,7 +153,7 @@ describe("/api/lists", () => {
         findOne: vi.fn().mockResolvedValue({
           _id: new ObjectId(),
           name: "Trimmed Name",
-          ownerId: "user-123",
+          ownerId: mockUserId,
           inviteCode: "newinvite123",
         }),
       }

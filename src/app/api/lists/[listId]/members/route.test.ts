@@ -2,21 +2,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GET, DELETE } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId = "507f1f77bcf86cd799439011"
+const userId1 = mockUserId
+const userId2 = "507f1f77bcf86cd799439022"
 
 const mockMemberships = [
   {
     _id: new ObjectId(),
-    userId: "user-123",
+    userId: userId1,
     listId: new ObjectId(listId),
     role: "owner",
     joinedAt: "2024-01-01T00:00:00.000Z",
   },
   {
     _id: new ObjectId(),
-    userId: "user-456",
+    userId: userId2,
     listId: new ObjectId(listId),
     role: "member",
     joinedAt: "2024-01-02T00:00:00.000Z",
@@ -24,8 +26,8 @@ const mockMemberships = [
 ]
 
 const mockUsers = [
-  { id: "user-123", name: "Test User", email: "test@example.com" },
-  { id: "user-456", name: "Other User", email: "other@example.com" },
+  { _id: new ObjectId(userId1), name: "Test User", email: "test@example.com" },
+  { _id: new ObjectId(userId2), name: "Other User", email: "other@example.com" },
 ]
 
 vi.mock("@/lib/api/list-helpers", () => ({
@@ -34,15 +36,11 @@ vi.mock("@/lib/api/list-helpers", () => ({
 
 vi.mock("@/lib/db/collections", () => ({
   getMembershipsCollection: vi.fn(),
-}))
-
-vi.mock("@/lib/db", () => ({
-  default: vi.fn(),
+  getUserCollection: vi.fn(),
 }))
 
 import { checkListAccess } from "@/lib/api/list-helpers"
-import { getMembershipsCollection } from "@/lib/db/collections"
-import getDb from "@/lib/db"
+import { getMembershipsCollection, getUserCollection } from "@/lib/db/collections"
 
 const createParams = (id: string) => ({ params: Promise.resolve({ listId: id }) })
 
@@ -65,9 +63,7 @@ describe("/api/lists/[listId]/members", () => {
       }
 
       vi.mocked(getMembershipsCollection).mockResolvedValue(mockMembershipsCollection as never)
-      vi.mocked(getDb).mockResolvedValue({
-        collection: vi.fn().mockReturnValue(mockUsersCollection),
-      } as never)
+      vi.mocked(getUserCollection).mockResolvedValue(mockUsersCollection as never)
 
       const response = await GET(new Request("http://localhost"), createParams(listId))
       const data = await response.json()
@@ -92,9 +88,7 @@ describe("/api/lists/[listId]/members", () => {
       }
 
       vi.mocked(getMembershipsCollection).mockResolvedValue(mockMembershipsCollection as never)
-      vi.mocked(getDb).mockResolvedValue({
-        collection: vi.fn().mockReturnValue(mockUsersCollection),
-      } as never)
+      vi.mocked(getUserCollection).mockResolvedValue(mockUsersCollection as never)
 
       const response = await GET(new Request("http://localhost"), createParams(listId))
 
@@ -133,9 +127,7 @@ describe("/api/lists/[listId]/members", () => {
       }
 
       vi.mocked(getMembershipsCollection).mockResolvedValue(mockMembershipsCollection as never)
-      vi.mocked(getDb).mockResolvedValue({
-        collection: vi.fn().mockReturnValue(mockUsersCollection),
-      } as never)
+      vi.mocked(getUserCollection).mockResolvedValue(mockUsersCollection as never)
 
       const response = await GET(new Request("http://localhost"), createParams(listId))
       const data = await response.json()
@@ -158,7 +150,7 @@ describe("/api/lists/[listId]/members", () => {
 
       const request = new Request("http://localhost", {
         method: "DELETE",
-        body: JSON.stringify({ userId: "user-456" }),
+        body: JSON.stringify({ userId: userId2 }),
       })
 
       const response = await DELETE(request, createParams(listId))
@@ -168,7 +160,7 @@ describe("/api/lists/[listId]/members", () => {
       expect(data.success).toBe(true)
       expect(mockMembershipsCollection.deleteOne).toHaveBeenCalledWith({
         listId: new ObjectId(listId),
-        userId: "user-456",
+        userId: userId2,
       })
     })
 
@@ -177,7 +169,7 @@ describe("/api/lists/[listId]/members", () => {
 
       const request = new Request("http://localhost", {
         method: "DELETE",
-        body: JSON.stringify({ userId: "user-456" }),
+        body: JSON.stringify({ userId: userId2 }),
       })
 
       const response = await DELETE(request, createParams(listId))
@@ -192,7 +184,7 @@ describe("/api/lists/[listId]/members", () => {
 
       const request = new Request("http://localhost", {
         method: "DELETE",
-        body: JSON.stringify({ userId: "user-123" }),
+        body: JSON.stringify({ userId: userId1 }),
       })
 
       const response = await DELETE(request, createParams(listId))
@@ -228,7 +220,7 @@ describe("/api/lists/[listId]/members", () => {
 
       const request = new Request("http://localhost", {
         method: "DELETE",
-        body: JSON.stringify({ userId: "user-456" }),
+        body: JSON.stringify({ userId: userId2 }),
       })
 
       const response = await DELETE(request, createParams(listId))

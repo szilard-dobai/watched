@@ -1,8 +1,9 @@
 import { http, HttpResponse } from "msw"
 import type { ListWithRole, Entry } from "@/types"
+import { mockUserId } from "./auth"
 
 export const mockUser = {
-  id: "user-123",
+  id: mockUserId,
   email: "test@example.com",
   name: "Test User",
   createdAt: new Date().toISOString(),

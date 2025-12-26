@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { PATCH, DELETE } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId = "507f1f77bcf86cd799439011"
 const entryId = "507f1f77bcf86cd799439022"
@@ -11,12 +11,12 @@ const watchId = "watch-1"
 const mockEntry = {
   _id: new ObjectId(entryId),
   listId: new ObjectId(listId),
-  addedByUserId: "user-123",
+  addedByUserId: mockUserId,
   tmdbId: 550,
   mediaType: "movie",
   title: "Fight Club",
   watches: [
-    { _id: watchId, startDate: "2024-01-01", addedByUserId: "user-123", addedAt: "2024-01-01T00:00:00.000Z" },
+    { _id: watchId, startDate: "2024-01-01", addedByUserId: mockUserId, addedAt: "2024-01-01T00:00:00.000Z" },
     { _id: "watch-2", startDate: "2024-02-01", addedByUserId: "user-456", addedAt: "2024-02-01T00:00:00.000Z" },
   ],
   createdAt: "2024-01-01T00:00:00.000Z",
@@ -232,7 +232,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches/[watchId]", () => {
 
       const entryWithOneWatch = {
         ...mockEntry,
-        watches: [{ _id: watchId, startDate: "2024-01-01", addedByUserId: "user-123" }],
+        watches: [{ _id: watchId, startDate: "2024-01-01", addedByUserId: mockUserId }],
       }
 
       const mockEntriesCollection = {

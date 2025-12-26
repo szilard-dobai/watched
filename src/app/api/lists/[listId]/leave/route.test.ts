@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { POST } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId = "507f1f77bcf86cd799439011"
 
@@ -42,7 +42,7 @@ describe("/api/lists/[listId]/leave", () => {
       expect(data.success).toBe(true)
       expect(mockMembershipsCollection.deleteOne).toHaveBeenCalledWith({
         listId: new ObjectId(listId),
-        userId: "user-123",
+        userId: mockUserId,
       })
     })
 

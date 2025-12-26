@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GET, PATCH, DELETE } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId = "507f1f77bcf86cd799439011"
 const mockList = {
   _id: new ObjectId(listId),
   name: "My Movies",
-  ownerId: "user-123",
+  ownerId: mockUserId,
   inviteCode: "abc123",
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
@@ -162,7 +162,7 @@ describe("/api/lists/[listId]", () => {
       })
 
       const response = await PATCH(request, createParams(listId))
-      const data = await response.json()
+      await response.json()
 
       expect(response.status).toBe(200)
       expect(mockListsCollection.updateOne).toHaveBeenCalledWith(

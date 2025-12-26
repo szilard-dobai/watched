@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { POST } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const mockList = {
   _id: new ObjectId("507f1f77bcf86cd799439011"),
@@ -54,7 +54,7 @@ describe("/api/lists/join", () => {
       expect(data.role).toBe("member")
       expect(mockMembershipsCollection.insertOne).toHaveBeenCalledWith(
         expect.objectContaining({
-          userId: "user-123",
+          userId: mockUserId,
           listId: mockList._id,
           role: "member",
         })
@@ -114,7 +114,7 @@ describe("/api/lists/join", () => {
       const mockMembershipsCollection = {
         findOne: vi.fn().mockResolvedValue({
           _id: new ObjectId(),
-          userId: "user-123",
+          userId: mockUserId,
           listId: mockList._id,
           role: "member",
         }),

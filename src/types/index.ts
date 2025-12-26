@@ -160,6 +160,7 @@ export interface ListWithRole extends List {
 }
 
 export interface User {
+  _id: ObjectId;
   id: string;
   email: string;
   name: string;
@@ -181,4 +182,63 @@ export interface DashboardStats {
   totalWatches: number;
   totalEntries: number;
   averageRating: number | null;
+}
+
+import type { ObjectId } from "mongodb";
+
+export interface DbList {
+  _id: ObjectId;
+  name: string;
+  ownerId: string;
+  inviteCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DbListMembership {
+  _id: ObjectId;
+  userId: string;
+  listId: ObjectId;
+  role: ListRole;
+  joinedAt: string;
+}
+
+export interface DbWatch {
+  _id: string;
+  startDate: string;
+  endDate?: string;
+  platform?: string;
+  notes?: string;
+  addedByUserId: string;
+  addedAt: string;
+}
+
+export interface DbEntry {
+  _id: ObjectId;
+  listId: ObjectId;
+  addedByUserId: string;
+  tmdbId: number;
+  mediaType: MediaType;
+  title: string;
+  originalTitle: string;
+  overview: string;
+  posterPath: string | null;
+  backdropPath: string | null;
+  releaseDate?: string;
+  firstAirDate?: string;
+  runtime?: number | null;
+  episodeRunTime?: number[];
+  numberOfSeasons?: number;
+  numberOfEpisodes?: number;
+  genres: Genre[];
+  voteAverage: number;
+  voteCount: number;
+  popularity: number;
+  status: string;
+  imdbId?: string | null;
+  originalLanguage: string;
+  networks?: Network[];
+  watches: DbWatch[];
+  createdAt: string;
+  updatedAt: string;
 }

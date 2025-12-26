@@ -2,18 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GET } from "./route"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { mockSession } from "@/test/mocks/auth"
+import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId1 = new ObjectId("507f1f77bcf86cd799439011")
 const listId2 = new ObjectId("507f1f77bcf86cd799439012")
 
 const mockMemberships = [
-  { _id: new ObjectId(), userId: "user-123", listId: listId1, role: "owner" },
-  { _id: new ObjectId(), userId: "user-123", listId: listId2, role: "member" },
+  { _id: new ObjectId(), userId: mockUserId, listId: listId1, role: "owner" },
+  { _id: new ObjectId(), userId: mockUserId, listId: listId2, role: "member" },
 ]
 
 const mockLists = [
-  { _id: listId1, name: "My Movies", ownerId: "user-123" },
+  { _id: listId1, name: "My Movies", ownerId: mockUserId },
   { _id: listId2, name: "Shared List", ownerId: "other-user" },
 ]
 
@@ -21,12 +21,12 @@ const mockEntries = [
   {
     _id: new ObjectId(),
     listId: listId1,
-    addedByUserId: "user-123",
+    addedByUserId: mockUserId,
     tmdbId: 550,
     mediaType: "movie",
     title: "Fight Club",
     watches: [
-      { _id: "watch-1", startDate: "2024-01-01", addedByUserId: "user-123", addedAt: "2024-01-01T00:00:00.000Z" },
+      { _id: "watch-1", startDate: "2024-01-01", addedByUserId: mockUserId, addedAt: "2024-01-01T00:00:00.000Z" },
     ],
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",

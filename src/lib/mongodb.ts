@@ -1,48 +1,43 @@
-import { type Db, MongoClient } from 'mongodb'
+import { type Db, MongoClient } from "mongodb";
 
 const options = {
-  appName: 'devrel.vercel.integration',
+  appName: "devrel.vercel.integration",
   maxIdleTimeMS: 5000,
-}
+};
 
-let dbPromise: Promise<Db> | null = null
+let dbPromise: Promise<Db> | null = null;
 
 declare global {
-  var _mongoDbPromise: Promise<Db> | undefined
+  var _mongoDbPromise: Promise<Db> | undefined;
 }
 
 const getDb = (): Promise<Db> => {
   if (dbPromise) {
-    return dbPromise
+    return dbPromise;
   }
 
-  const uri = process.env.MONGODB_URI
+  const uri = process.env.MONGODB_URI;
   if (!uri) {
-    throw new Error('Please add your MONGODB_URI env variable')
+    throw new Error("Please add your MONGODB_URI env variable");
   }
 
-  const dbName = process.env.MONGODB_DB
+  const dbName = process.env.MONGODB_DB;
   if (!dbName) {
-    throw new Error('Please add your MONGODB_DB env variable')
+    throw new Error("Please add your MONGODB_DB env variable");
   }
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     if (!global._mongoDbPromise) {
-      const client = new MongoClient(uri, options)
-      global._mongoDbPromise = client.connect().then((c) => c.db(dbName))
+      const client = new MongoClient(uri, options);
+      global._mongoDbPromise = client.connect().then((c) => c.db(dbName));
     }
-    dbPromise = global._mongoDbPromise
+    dbPromise = global._mongoDbPromise;
   } else {
-    const client = new MongoClient(uri, options)
-    dbPromise = client.connect().then((c) => c.db(dbName))
+    const client = new MongoClient(uri, options);
+    dbPromise = client.connect().then((c) => c.db(dbName));
   }
 
-  return dbPromise
-}
+  return dbPromise;
+};
 
-export default getDb
-
-export const getTrackingCollection = async () => {
-  const db = await getDb()
-  return db.collection('tracking_events')
-}
+export default getDb;

@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "post_edit": {
+      "command": "npm run lint:fix",
+      "description": "Auto-fix linting issues after editing files",
+      "enabled": true,
+      "timeout": 30000
+    },
+    "pre_commit": {
+      "command": "npm run check",
+      "description": "Run lint and type-check before commits",
+      "enabled": true,
+      "timeout": 60000
+    },
+    "post_write": {
+      "command": "npm run lint:fix",
+      "description": "Auto-fix formatting after creating new files",
+      "enabled": true,
+      "timeout": 30000
+    }
+  },
+  "settings": {
+    "auto_save": true,
+    "format_on_save": true
+  }
+}

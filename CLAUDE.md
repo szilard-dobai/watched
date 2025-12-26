@@ -42,6 +42,7 @@ Next.js 16 App Router with React 19, deployed on Vercel.
 - Server Components by default (use `"use client"` directive for client components)
 - Path alias: `@/*` maps to `src/`
 - Always use arrow functions, never function declarations
+- No comments in code unless absolutely necessary (code should be self-documenting)
 
 **Environment variables:**
 

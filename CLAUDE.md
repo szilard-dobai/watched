@@ -41,3 +41,15 @@ Next.js 16 App Router with React 19, deployed on Vercel.
 **Environment variables:**
 - Store in `.env.local` (gitignored)
 - Required: `MONGODB_URI`, `TMDB_API_KEY`
+
+## Workflow Rules
+
+**Testing requirements:**
+- All code changes must include tests when relevant
+- Write tests for new components, utilities, hooks, and API routes
+- Place test files alongside source files: `Component.tsx` → `Component.test.tsx`
+
+**Pre-commit checks:**
+- Before committing, always run `/check` to verify lint and type-check pass
+- Run `/fix` to auto-fix any linting/formatting issues
+- Ensure all tests pass with `npm run test:run`

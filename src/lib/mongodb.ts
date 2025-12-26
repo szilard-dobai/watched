@@ -11,7 +11,7 @@ declare global {
   var _mongoDbPromise: Promise<Db> | undefined
 }
 
-function getDb(): Promise<Db> {
+const getDb = (): Promise<Db> => {
   if (dbPromise) {
     return dbPromise
   }
@@ -42,7 +42,7 @@ function getDb(): Promise<Db> {
 
 export default getDb
 
-export async function getTrackingCollection() {
+export const getTrackingCollection = async () => {
   const db = await getDb()
   return db.collection('tracking_events')
 }

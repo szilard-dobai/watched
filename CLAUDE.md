@@ -37,6 +37,7 @@ Next.js 16 App Router with React 19, deployed on Vercel.
 - Uses `src/` directory pattern (app router lives in `src/app/`)
 - Server Components by default (use `"use client"` directive for client components)
 - Path alias: `@/*` maps to `src/`
+- Always use arrow functions, never function declarations
 
 **Environment variables:**
 - Store in `.env.local` (gitignored)

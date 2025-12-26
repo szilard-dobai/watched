@@ -10,10 +10,10 @@
     "lint:fix": "eslint --fix",
     "type-check": "tsc --noEmit",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "vitest run --passWithNoTests",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "check": "npm run lint && npm run type-check",
+    "check": "npm run lint && npm run type-check && npm run test:run",
     "check:full": "npm run lint && npm run type-check && npm run test && npm run build",
     "format": "prettier --write ."
   },

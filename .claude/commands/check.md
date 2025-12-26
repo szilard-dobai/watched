@@ -1,11 +1,12 @@
 ---
-description: Run quick quality checks (lint and type-check)
+description: Run quick quality checks (lint, type-check, and tests)
 ---
 
 Run the following quality checks:
 
 1. Run ESLint to check for code quality issues
 2. Run TypeScript compiler to check for type errors
+3. Run tests to ensure all tests pass
 
 Execute: `npm run check`
 

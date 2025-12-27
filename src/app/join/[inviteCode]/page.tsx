@@ -38,7 +38,7 @@ const JoinListPage = () => {
   const handleJoin = async () => {
     const result = await join()
     if (result) {
-      router.push(`/lists/${result._id}`)
+      router.push("/")
     }
   }
 

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import { UserMenu } from "@/components/auth/user-menu"
 import { AddEntryModal } from "@/components/forms/add-entry-modal"
+import { EditEntryModal } from "@/components/forms/edit-entry-modal"
 import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries"
 import { useLists } from "@/hooks/use-lists"
 import { entryApi } from "@/lib/api/fetchers"
@@ -56,10 +57,19 @@ const getStatusLabel = (status: EntryStatus) => {
 
 const Home = () => {
   const { data: session } = useSession()
-  const { entries, isLoading: isEntriesLoading, refetch } = useAllEntries()
+  const {
+    entries,
+    isLoading: isEntriesLoading,
+    refetch,
+    updateStatus,
+    addWatch,
+    deleteWatch,
+    deleteEntry,
+  } = useAllEntries()
   const { lists, isLoading: isListsLoading } = useLists()
 
   const [isAddEntryOpen, setIsAddEntryOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<EntryWithList | null>(null)
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery")
 
   const [filters, setFilters] = useState<DashboardFilterState>({
@@ -350,10 +360,11 @@ const Home = () => {
               const rating = Math.round(entry.voteAverage * 10) / 10
               const genres = entry.genres?.slice(0, 2).map((g) => g.name).join(", ") || ""
               return (
-                <Link
+                <button
                   key={entry._id}
-                  href={`/lists/${entry.listId}`}
-                  className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
+                  type="button"
+                  onClick={() => setEditingEntry(entry)}
+                  className="group overflow-hidden rounded-xl border border-zinc-200 bg-white text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
                 >
                   <div className="relative aspect-2/3 w-full bg-zinc-200 dark:bg-zinc-800">
                     {entry.posterPath ? (
@@ -407,7 +418,7 @@ const Home = () => {
                     </div>
 
                     <div className="mt-3 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-                      {mostRecentWatch && (
+                      {mostRecentWatch?.startDate && (
                         <p className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
                           {formatDate(mostRecentWatch.startDate)}
@@ -416,7 +427,7 @@ const Home = () => {
                       {genres && <p>{genres}</p>}
                     </div>
                   </div>
-                </Link>
+                </button>
               )
             })}
           </div>
@@ -425,10 +436,11 @@ const Home = () => {
             {filteredEntries.map((entry) => {
               const mostRecentWatch = getMostRecentWatch(entry)
               return (
-                <Link
+                <button
                   key={entry._id}
-                  href={`/lists/${entry.listId}`}
-                  className="flex gap-4 rounded-lg border border-zinc-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
+                  type="button"
+                  onClick={() => setEditingEntry(entry)}
+                  className="flex w-full gap-4 rounded-lg border border-zinc-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
                 >
                   {entry.posterPath ? (
                     <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded">
@@ -474,7 +486,7 @@ const Home = () => {
                           TMDB: {entry.voteAverage.toFixed(1)}/10
                         </span>
                       )}
-                      {mostRecentWatch && (
+                      {mostRecentWatch?.startDate && (
                         <span>
                           {formatDate(mostRecentWatch.startDate)}
                           {mostRecentWatch.endDate &&
@@ -499,7 +511,7 @@ const Home = () => {
                       </div>
                     )}
                   </div>
-                </Link>
+                </button>
               )
             })}
           </div>
@@ -512,6 +524,24 @@ const Home = () => {
         onSubmit={handleAddEntry}
         lists={lists}
         defaultListId={defaultListId}
+      />
+
+      <EditEntryModal
+        open={!!editingEntry}
+        onOpenChange={(open) => !open && setEditingEntry(null)}
+        entry={editingEntry}
+        onUpdateStatus={(entryId, status) =>
+          updateStatus(editingEntry?.listId ?? "", entryId, status)
+        }
+        onAddWatch={(entryId, data) =>
+          addWatch(editingEntry?.listId ?? "", entryId, data)
+        }
+        onDeleteWatch={(entryId, watchId) =>
+          deleteWatch(editingEntry?.listId ?? "", entryId, watchId)
+        }
+        onDeleteEntry={(entryId) =>
+          deleteEntry(editingEntry?.listId ?? "", entryId)
+        }
       />
     </div>
   )

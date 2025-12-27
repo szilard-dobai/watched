@@ -36,9 +36,9 @@ const ListSettingsPage = () => {
     if (error) {
       router.push("/lists")
     } else if (list && list.role !== "owner") {
-      router.push(`/lists/${listId}`)
+      router.push("/lists")
     }
-  }, [error, list, listId, router])
+  }, [error, list, router])
 
   if (list && !nameInitialized) {
     setName(list.name)
@@ -89,11 +89,11 @@ const ListSettingsPage = () => {
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       <div className="mx-auto max-w-2xl px-4 py-8">
         <Link
-          href={`/lists/${listId}`}
+          href="/lists"
           className="mb-6 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to List
+          Back to Lists
         </Link>
 
         <h1 className="mb-8 text-2xl font-bold">List Settings</h1>

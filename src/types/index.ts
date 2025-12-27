@@ -72,7 +72,7 @@ export interface Network {
 
 export interface Watch {
   _id: string;
-  startDate: string;
+  startDate?: string;
   endDate?: string;
   platform?: string;
   notes?: string;
@@ -111,7 +111,7 @@ export interface Entry {
   updatedAt: string;
 }
 
-export interface EntryFormData {
+interface EntryFormDataBase {
   tmdbId: number;
   mediaType: MediaType;
   title: string;
@@ -133,12 +133,32 @@ export interface EntryFormData {
   imdbId?: string | null;
   originalLanguage: string;
   networks?: Network[];
-  watchStatus: EntryStatus;
-  startDate: string;
-  endDate?: string;
   platform?: string;
   notes?: string;
 }
+
+interface EntryFormDataPlanned extends EntryFormDataBase {
+  watchStatus: "planned";
+  startDate?: never;
+  endDate?: never;
+}
+
+interface EntryFormDataInProgress extends EntryFormDataBase {
+  watchStatus: "in_progress";
+  startDate: string;
+  endDate?: never;
+}
+
+interface EntryFormDataFinished extends EntryFormDataBase {
+  watchStatus: "finished";
+  startDate: string;
+  endDate: string;
+}
+
+export type EntryFormData =
+  | EntryFormDataPlanned
+  | EntryFormDataInProgress
+  | EntryFormDataFinished;
 
 export interface List {
   _id: string;
@@ -208,7 +228,7 @@ export interface DbListMembership {
 
 export interface DbWatch {
   _id: string;
-  startDate: string;
+  startDate?: string;
   endDate?: string;
   platform?: string;
   notes?: string;

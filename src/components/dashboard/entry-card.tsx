@@ -157,7 +157,7 @@ export const EntryCard = ({
         </div>
 
         <div className="mt-3 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-          {mostRecentWatch && (
+          {mostRecentWatch?.startDate && (
             <p className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
               {formatDate(mostRecentWatch.startDate)}

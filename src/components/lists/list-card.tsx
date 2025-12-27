@@ -12,7 +12,7 @@ interface ListCardProps {
 
 export const ListCard = ({ list }: ListCardProps) => {
   return (
-    <Link href={`/lists/${list._id}`}>
+    <Link href={`/lists/${list._id}/settings`}>
       <Card className="transition-colors hover:border-zinc-400 dark:hover:border-zinc-600">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">

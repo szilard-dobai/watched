@@ -43,7 +43,7 @@ export const EntryCard = ({
   return (
     <div className="group relative overflow-hidden rounded-lg border border-zinc-200 bg-white transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950">
       {entry.posterPath ? (
-        <div className="relative aspect-[2/3] w-full">
+        <div className="relative aspect-2/3 w-full">
           <Image
             src={`${TMDB_IMAGE_BASE}${entry.posterPath}`}
             alt={entry.title}
@@ -53,7 +53,7 @@ export const EntryCard = ({
           />
         </div>
       ) : (
-        <div className="flex aspect-[2/3] w-full items-center justify-center bg-zinc-200 dark:bg-zinc-800">
+        <div className="flex aspect-2/3 w-full items-center justify-center bg-zinc-200 dark:bg-zinc-800">
           <span className="text-zinc-500">No poster</span>
         </div>
       )}

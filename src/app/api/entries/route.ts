@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import { getMembershipsCollection, getEntriesCollection, getListsCollection } from "@/lib/db/collections"
-import type { Watch } from "@/types"
+import {
+  getMembershipsCollection,
+  getEntriesCollection,
+  getListsCollection,
+} from "@/lib/db/collections"
 
 export const GET = async () => {
   try {
@@ -16,34 +19,85 @@ export const GET = async () => {
     const listIds = userMemberships.map((m) => m.listId)
 
     const userLists = await lists.find({ _id: { $in: listIds } }).toArray()
-    const listMap = new Map(userLists.map((l) => [l._id.toString(), l]))
+    const listMap = new Map(userLists.map((l) => [l._id.toString(), l.name]))
 
     const allEntries = await entries
-      .find({ listId: { $in: listIds } })
+      .aggregate([
+        { $match: { listId: { $in: listIds } } },
+        {
+          $lookup: {
+            from: "media",
+            localField: "mediaId",
+            foreignField: "_id",
+            as: "media",
+          },
+        },
+        { $unwind: "$media" },
+        {
+          $project: {
+            _id: { $toString: "$_id" },
+            listId: { $toString: "$listId" },
+            mediaId: { $toString: "$mediaId" },
+            addedByUserId: 1,
+            watchStatus: { $ifNull: ["$watchStatus", "planned"] },
+            watches: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            tmdbId: "$media.tmdbId",
+            mediaType: "$media.mediaType",
+            title: "$media.title",
+            originalTitle: "$media.originalTitle",
+            overview: "$media.overview",
+            posterPath: "$media.posterPath",
+            backdropPath: "$media.backdropPath",
+            releaseDate: "$media.releaseDate",
+            firstAirDate: "$media.firstAirDate",
+            runtime: "$media.runtime",
+            episodeRunTime: "$media.episodeRunTime",
+            numberOfSeasons: "$media.numberOfSeasons",
+            numberOfEpisodes: "$media.numberOfEpisodes",
+            genres: "$media.genres",
+            voteAverage: "$media.voteAverage",
+            voteCount: "$media.voteCount",
+            popularity: "$media.popularity",
+            status: "$media.status",
+            imdbId: "$media.imdbId",
+            originalLanguage: "$media.originalLanguage",
+            networks: "$media.networks",
+          },
+        },
+      ])
       .toArray()
 
     const entriesWithListInfo = allEntries.map((entry) => {
-      const list = listMap.get(entry.listId.toString())
-      const watches = (entry.watches ?? []) as Watch[]
-      const createdAt = entry.createdAt as string
+      const entryData = entry as {
+        listId: string
+        watches?: { addedAt: string }[]
+        createdAt: string
+      }
       return {
         ...entry,
-        _id: entry._id.toString(),
-        listId: entry.listId.toString(),
-        listName: list?.name ?? "Unknown List",
-        watchStatus: entry.watchStatus ?? "planned",
-        watches,
-        createdAt,
+        listName: listMap.get(entryData.listId) ?? "Unknown List",
       }
     })
 
     entriesWithListInfo.sort((a, b) => {
-      const aLatestWatch = a.watches.length
-        ? Math.max(...a.watches.map((w) => new Date(w.addedAt).getTime()))
-        : new Date(a.createdAt).getTime()
-      const bLatestWatch = b.watches.length
-        ? Math.max(...b.watches.map((w) => new Date(w.addedAt).getTime()))
-        : new Date(b.createdAt).getTime()
+      const aEntry = a as unknown as {
+        watches?: { addedAt: string }[]
+        createdAt: string
+      }
+      const bEntry = b as unknown as {
+        watches?: { addedAt: string }[]
+        createdAt: string
+      }
+      const aWatches = aEntry.watches ?? []
+      const bWatches = bEntry.watches ?? []
+      const aLatestWatch = aWatches.length
+        ? Math.max(...aWatches.map((w) => new Date(w.addedAt).getTime()))
+        : new Date(aEntry.createdAt).getTime()
+      const bLatestWatch = bWatches.length
+        ? Math.max(...bWatches.map((w) => new Date(w.addedAt).getTime()))
+        : new Date(bEntry.createdAt).getTime()
       return bLatestWatch - aLatestWatch
     })
 

@@ -6,10 +6,23 @@ import { mockSession, mockUserId } from "@/test/mocks/auth"
 
 const listId = "507f1f77bcf86cd799439011"
 const entryId = "507f1f77bcf86cd799439022"
+const mediaId = new ObjectId()
 
-const mockEntry = {
+const mockDbEntry = {
   _id: new ObjectId(entryId),
   listId: new ObjectId(listId),
+  mediaId: mediaId,
+  addedByUserId: mockUserId,
+  watchStatus: "planned",
+  watches: [{ _id: "watch-1", startDate: "2024-01-01", addedByUserId: mockUserId }],
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: "2024-01-01T00:00:00.000Z",
+}
+
+const mockAggregatedEntry = {
+  _id: entryId,
+  listId: listId,
+  mediaId: mediaId.toString(),
   addedByUserId: mockUserId,
   tmdbId: 550,
   mediaType: "movie",
@@ -17,6 +30,7 @@ const mockEntry = {
   originalTitle: "Fight Club",
   overview: "An insomniac office worker...",
   posterPath: "/poster.jpg",
+  watchStatus: "planned",
   watches: [{ _id: "watch-1", startDate: "2024-01-01", addedByUserId: mockUserId }],
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
@@ -49,7 +63,9 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
       vi.mocked(checkListAccess).mockResolvedValue("owner")
 
       const mockEntriesCollection = {
-        findOne: vi.fn().mockResolvedValue(mockEntry),
+        aggregate: vi.fn().mockReturnValue({
+          toArray: vi.fn().mockResolvedValue([mockAggregatedEntry]),
+        }),
       }
 
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
@@ -66,7 +82,9 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
       vi.mocked(checkListAccess).mockResolvedValue("owner")
 
       const mockEntriesCollection = {
-        findOne: vi.fn().mockResolvedValue(null),
+        aggregate: vi.fn().mockReturnValue({
+          toArray: vi.fn().mockResolvedValue([]),
+        }),
       }
 
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
@@ -100,39 +118,43 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
   })
 
   describe("PATCH", () => {
-    it("updates entry successfully with permission", async () => {
+    it("updates entry watchStatus successfully with permission", async () => {
       vi.mocked(checkListAccess).mockResolvedValue("owner")
       vi.mocked(checkEntryPermission).mockReturnValue(true)
 
-      const updatedEntry = { ...mockEntry, title: "Updated Title" }
+      const updatedAggregatedEntry = { ...mockAggregatedEntry, watchStatus: "finished" }
       const mockEntriesCollection = {
-        findOne: vi.fn()
-          .mockResolvedValueOnce(mockEntry)
-          .mockResolvedValueOnce(updatedEntry),
+        findOne: vi.fn().mockResolvedValue(mockDbEntry),
         updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
+        aggregate: vi.fn().mockReturnValue({
+          toArray: vi.fn().mockResolvedValue([updatedAggregatedEntry]),
+        }),
       }
 
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ title: "Updated Title" }),
+        body: JSON.stringify({ watchStatus: "finished" }),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.title).toBe("Updated Title")
+      expect(data.watchStatus).toBe("finished")
     })
 
-    it("only updates allowed fields", async () => {
+    it("only updates allowed fields (watchStatus)", async () => {
       vi.mocked(checkListAccess).mockResolvedValue("owner")
       vi.mocked(checkEntryPermission).mockReturnValue(true)
 
       const mockEntriesCollection = {
-        findOne: vi.fn().mockResolvedValue(mockEntry),
+        findOne: vi.fn().mockResolvedValue(mockDbEntry),
         updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
+        aggregate: vi.fn().mockReturnValue({
+          toArray: vi.fn().mockResolvedValue([mockAggregatedEntry]),
+        }),
       }
 
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
@@ -140,7 +162,8 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
       const request = new Request("http://localhost", {
         method: "PATCH",
         body: JSON.stringify({
-          title: "Updated Title",
+          watchStatus: "in_progress",
+          title: "Hacked Title",
           tmdbId: 999,
           addedByUserId: "hacker",
           listId: "different-list",
@@ -153,13 +176,14 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
         expect.anything(),
         expect.objectContaining({
           $set: expect.objectContaining({
-            title: "Updated Title",
+            watchStatus: "in_progress",
             updatedAt: expect.any(String),
           }),
         })
       )
 
       const updateCall = mockEntriesCollection.updateOne.mock.calls[0][1].$set
+      expect(updateCall.title).toBeUndefined()
       expect(updateCall.tmdbId).toBeUndefined()
       expect(updateCall.addedByUserId).toBeUndefined()
       expect(updateCall.listId).toBeUndefined()
@@ -176,7 +200,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ title: "Updated" }),
+        body: JSON.stringify({ watchStatus: "finished" }),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
@@ -191,14 +215,14 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
       vi.mocked(checkEntryPermission).mockReturnValue(false)
 
       const mockEntriesCollection = {
-        findOne: vi.fn().mockResolvedValue({ ...mockEntry, addedByUserId: "other-user" }),
+        findOne: vi.fn().mockResolvedValue({ ...mockDbEntry, addedByUserId: "other-user" }),
       }
 
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ title: "Updated" }),
+        body: JSON.stringify({ watchStatus: "finished" }),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
@@ -213,7 +237,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ title: "Updated" }),
+        body: JSON.stringify({ watchStatus: "finished" }),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
@@ -228,7 +252,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ title: "Updated" }),
+        body: JSON.stringify({ watchStatus: "finished" }),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
@@ -245,7 +269,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
       vi.mocked(checkEntryPermission).mockReturnValue(true)
 
       const mockEntriesCollection = {
-        findOne: vi.fn().mockResolvedValue(mockEntry),
+        findOne: vi.fn().mockResolvedValue(mockDbEntry),
         deleteOne: vi.fn().mockResolvedValue({ deletedCount: 1 }),
       }
 
@@ -280,7 +304,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
       vi.mocked(checkEntryPermission).mockReturnValue(false)
 
       const mockEntriesCollection = {
-        findOne: vi.fn().mockResolvedValue({ ...mockEntry, addedByUserId: "other-user" }),
+        findOne: vi.fn().mockResolvedValue({ ...mockDbEntry, addedByUserId: "other-user" }),
       }
 
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)

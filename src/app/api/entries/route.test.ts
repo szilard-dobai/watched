@@ -17,10 +17,11 @@ const mockLists = [
   { _id: listId2, name: "Shared List", ownerId: "other-user" },
 ]
 
-const mockEntries = [
+const mockAggregatedEntries = [
   {
-    _id: new ObjectId(),
-    listId: listId1,
+    _id: new ObjectId().toString(),
+    listId: listId1.toString(),
+    mediaId: new ObjectId().toString(),
     addedByUserId: mockUserId,
     tmdbId: 550,
     mediaType: "movie",
@@ -28,12 +29,14 @@ const mockEntries = [
     watches: [
       { _id: "watch-1", startDate: "2024-01-01", addedByUserId: mockUserId, addedAt: "2024-01-01T00:00:00.000Z" },
     ],
+    watchStatus: "planned",
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
   },
   {
-    _id: new ObjectId(),
-    listId: listId2,
+    _id: new ObjectId().toString(),
+    listId: listId2.toString(),
+    mediaId: new ObjectId().toString(),
     addedByUserId: "user-456",
     tmdbId: 1399,
     mediaType: "tv",
@@ -41,6 +44,7 @@ const mockEntries = [
     watches: [
       { _id: "watch-2", startDate: "2024-02-01", addedByUserId: "user-456", addedAt: "2024-02-15T00:00:00.000Z" },
     ],
+    watchStatus: "planned",
     createdAt: "2024-02-01T00:00:00.000Z",
     updatedAt: "2024-02-15T00:00:00.000Z",
   },
@@ -67,7 +71,7 @@ describe("/api/entries", () => {
       }
 
       const mockEntriesCollection = {
-        find: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(mockEntries) }),
+        aggregate: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(mockAggregatedEntries) }),
       }
 
       const mockListsCollection = {
@@ -90,14 +94,14 @@ describe("/api/entries", () => {
     })
 
     it("returns entries sorted by createdAt when no watches", async () => {
-      const entriesNoWatches = mockEntries.map((e) => ({ ...e, watches: [] }))
+      const entriesNoWatches = mockAggregatedEntries.map((e) => ({ ...e, watches: [] }))
 
       const mockMembershipsCollection = {
         find: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(mockMemberships) }),
       }
 
       const mockEntriesCollection = {
-        find: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(entriesNoWatches) }),
+        aggregate: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(entriesNoWatches) }),
       }
 
       const mockListsCollection = {
@@ -122,7 +126,7 @@ describe("/api/entries", () => {
       }
 
       const mockEntriesCollection = {
-        find: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue([]) }),
+        aggregate: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue([]) }),
       }
 
       const mockListsCollection = {
@@ -146,7 +150,7 @@ describe("/api/entries", () => {
       }
 
       const mockEntriesCollection = {
-        find: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(mockEntries) }),
+        aggregate: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(mockAggregatedEntries) }),
       }
 
       const mockListsCollection = {

@@ -216,10 +216,8 @@ export interface DbWatch {
   addedAt: string;
 }
 
-export interface DbEntry {
+export interface DbMedia {
   _id: ObjectId;
-  listId: ObjectId;
-  addedByUserId: string;
   tmdbId: number;
   mediaType: MediaType;
   title: string;
@@ -241,6 +239,19 @@ export interface DbEntry {
   imdbId?: string | null;
   originalLanguage: string;
   networks?: Network[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Media extends Omit<DbMedia, "_id"> {
+  _id: string;
+}
+
+export interface DbEntry {
+  _id: ObjectId;
+  listId: ObjectId;
+  mediaId: ObjectId;
+  addedByUserId: string;
   watchStatus: EntryStatus;
   watches: DbWatch[];
   createdAt: string;

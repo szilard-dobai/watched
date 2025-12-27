@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import type { User, DbList, DbListMembership, DbEntry } from "@/types";
+import type { User, DbList, DbListMembership, DbEntry, DbMedia } from "@/types";
 import getDb from ".";
 
 export const getListsCollection = async (): Promise<Collection<DbList>> => {
@@ -22,4 +22,9 @@ export const getUserCollection = async (): Promise<Collection<User>> => {
 export const getEntriesCollection = async (): Promise<Collection<DbEntry>> => {
   const db = await getDb();
   return db.collection<DbEntry>("entries");
+};
+
+export const getMediaCollection = async (): Promise<Collection<DbMedia>> => {
+  const db = await getDb();
+  return db.collection<DbMedia>("media");
 };

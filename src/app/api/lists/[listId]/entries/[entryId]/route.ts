@@ -20,16 +20,64 @@ export const GET = async (_request: Request, { params }: RouteParams) => {
     }
 
     const entries = await getEntriesCollection()
-    const entry = await entries.findOne({
-      _id: new ObjectId(entryId),
-      listId: new ObjectId(listId),
-    })
+    const result = await entries
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectId(entryId),
+            listId: new ObjectId(listId),
+          },
+        },
+        {
+          $lookup: {
+            from: "media",
+            localField: "mediaId",
+            foreignField: "_id",
+            as: "media",
+          },
+        },
+        { $unwind: "$media" },
+        {
+          $project: {
+            _id: { $toString: "$_id" },
+            listId: { $toString: "$listId" },
+            mediaId: { $toString: "$mediaId" },
+            addedByUserId: 1,
+            watchStatus: { $ifNull: ["$watchStatus", "planned"] },
+            watches: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            tmdbId: "$media.tmdbId",
+            mediaType: "$media.mediaType",
+            title: "$media.title",
+            originalTitle: "$media.originalTitle",
+            overview: "$media.overview",
+            posterPath: "$media.posterPath",
+            backdropPath: "$media.backdropPath",
+            releaseDate: "$media.releaseDate",
+            firstAirDate: "$media.firstAirDate",
+            runtime: "$media.runtime",
+            episodeRunTime: "$media.episodeRunTime",
+            numberOfSeasons: "$media.numberOfSeasons",
+            numberOfEpisodes: "$media.numberOfEpisodes",
+            genres: "$media.genres",
+            voteAverage: "$media.voteAverage",
+            voteCount: "$media.voteCount",
+            popularity: "$media.popularity",
+            status: "$media.status",
+            imdbId: "$media.imdbId",
+            originalLanguage: "$media.originalLanguage",
+            networks: "$media.networks",
+          },
+        },
+      ])
+      .toArray()
 
-    if (!entry) {
+    if (result.length === 0) {
       return NextResponse.json({ error: "Entry not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ ...entry, _id: entry._id.toString() })
+    return NextResponse.json(result[0])
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
@@ -63,27 +111,7 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
     }
 
     const updates = await request.json()
-    const allowedFields = [
-      "title",
-      "originalTitle",
-      "overview",
-      "posterPath",
-      "backdropPath",
-      "releaseDate",
-      "firstAirDate",
-      "runtime",
-      "episodeRunTime",
-      "numberOfSeasons",
-      "numberOfEpisodes",
-      "genres",
-      "voteAverage",
-      "voteCount",
-      "popularity",
-      "status",
-      "imdbId",
-      "originalLanguage",
-      "networks",
-    ]
+    const allowedFields = ["watchStatus"]
 
     const filteredUpdates: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
@@ -95,10 +123,60 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
       }
     }
 
-    await entries.updateOne({ _id: new ObjectId(entryId) }, { $set: filteredUpdates })
+    await entries.updateOne(
+      { _id: new ObjectId(entryId) },
+      { $set: filteredUpdates }
+    )
 
-    const updatedEntry = await entries.findOne({ _id: new ObjectId(entryId) })
-    return NextResponse.json({ ...updatedEntry, _id: updatedEntry?._id.toString() })
+    const result = await entries
+      .aggregate([
+        { $match: { _id: new ObjectId(entryId) } },
+        {
+          $lookup: {
+            from: "media",
+            localField: "mediaId",
+            foreignField: "_id",
+            as: "media",
+          },
+        },
+        { $unwind: "$media" },
+        {
+          $project: {
+            _id: { $toString: "$_id" },
+            listId: { $toString: "$listId" },
+            mediaId: { $toString: "$mediaId" },
+            addedByUserId: 1,
+            watchStatus: { $ifNull: ["$watchStatus", "planned"] },
+            watches: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            tmdbId: "$media.tmdbId",
+            mediaType: "$media.mediaType",
+            title: "$media.title",
+            originalTitle: "$media.originalTitle",
+            overview: "$media.overview",
+            posterPath: "$media.posterPath",
+            backdropPath: "$media.backdropPath",
+            releaseDate: "$media.releaseDate",
+            firstAirDate: "$media.firstAirDate",
+            runtime: "$media.runtime",
+            episodeRunTime: "$media.episodeRunTime",
+            numberOfSeasons: "$media.numberOfSeasons",
+            numberOfEpisodes: "$media.numberOfEpisodes",
+            genres: "$media.genres",
+            voteAverage: "$media.voteAverage",
+            voteCount: "$media.voteCount",
+            popularity: "$media.popularity",
+            status: "$media.status",
+            imdbId: "$media.imdbId",
+            originalLanguage: "$media.originalLanguage",
+            networks: "$media.networks",
+          },
+        },
+      ])
+      .toArray()
+
+    return NextResponse.json(result[0])
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

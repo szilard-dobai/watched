@@ -55,6 +55,24 @@ export const AddWatchModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
+  const isMovie = entry.mediaType === "movie"
+
+  const isFormValid = () => {
+    if (status === "in_progress") return !!startDate
+    if (status === "finished") {
+      if (!startDate) return false
+      if (isMovie) return true
+      if (!endDate) return false
+      return endDate >= startDate
+    }
+    return false
+  }
+
+  const dateError =
+    status === "finished" && startDate && endDate && endDate < startDate
+      ? "End date must be on or after start date"
+      : ""
+
   const handleClose = () => {
     setStartDate(undefined)
     setEndDate(undefined)
@@ -72,10 +90,13 @@ export const AddWatchModal = ({
     setError("")
 
     try {
+      const finalEndDate =
+        status === "finished" && isMovie && !endDate ? startDate : endDate
+
       await onSubmit({
         status,
         startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
-        endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
+        endDate: finalEndDate ? format(finalEndDate, "yyyy-MM-dd") : undefined,
         platform: platform || undefined,
         notes: notes || undefined,
       })
@@ -114,15 +135,29 @@ export const AddWatchModal = ({
                   placeholder="Pick start date"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">End Date</label>
-                <DatePicker
-                  date={endDate}
-                  onDateChange={setEndDate}
-                  placeholder="Pick end date"
-                />
-              </div>
+              {status === "finished" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    End Date {isMovie ? "(optional)" : "*"}
+                  </label>
+                  <DatePicker
+                    date={endDate}
+                    onDateChange={setEndDate}
+                    placeholder={isMovie ? "Same as start date" : "Pick end date"}
+                  />
+                </div>
+              )}
             </div>
+            {dateError && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {dateError}
+              </p>
+            )}
+            {status === "finished" && isMovie && !endDate && (
+              <p className="text-sm text-zinc-500">
+                For movies, end date defaults to start date if not specified.
+              </p>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Platform</label>
@@ -179,7 +214,7 @@ export const AddWatchModal = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isFormValid()}>
               {isSubmitting ? "Adding..." : "Log Watch"}
             </Button>
           </DialogFooter>

@@ -112,9 +112,23 @@ export const AddEntryModal = ({
     if (!selectedResult || !details || !selectedListId) return false;
     if (watchStatus === "planned") return true;
     if (watchStatus === "in_progress") return !!startDate;
-    if (watchStatus === "finished") return !!startDate && !!endDate;
+    if (watchStatus === "finished") {
+      if (!startDate) return false;
+      const isMovieEntry = selectedResult.media_type === "movie";
+      if (isMovieEntry) return true;
+      if (!endDate) return false;
+      return endDate >= startDate;
+    }
     return false;
   };
+
+  const dateError =
+    watchStatus === "finished" &&
+    startDate &&
+    endDate &&
+    endDate < startDate
+      ? "End date must be on or after start date"
+      : "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,11 +186,15 @@ export const AddEntryModal = ({
           startDate: format(startDate!, "yyyy-MM-dd"),
         };
       } else {
+        const finalEndDate =
+          selectedResult!.media_type === "movie" && !endDate
+            ? startDate!
+            : endDate!;
         formData = {
           ...baseData,
           watchStatus: "finished",
           startDate: format(startDate!, "yyyy-MM-dd"),
-          endDate: format(endDate!, "yyyy-MM-dd"),
+          endDate: format(finalEndDate, "yyyy-MM-dd"),
         };
       }
 
@@ -314,24 +332,41 @@ export const AddEntryModal = ({
               </div>
 
               {watchStatus !== "planned" && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Start Date *</label>
-                    <DatePicker
-                      date={startDate}
-                      onDateChange={setStartDate}
-                      placeholder="Pick start date"
-                    />
-                  </div>
-                  {watchStatus === "finished" && (
+                <div className="space-y-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">End Date *</label>
+                      <label className="text-sm font-medium">Start Date *</label>
                       <DatePicker
-                        date={endDate}
-                        onDateChange={setEndDate}
-                        placeholder="Pick end date"
+                        date={startDate}
+                        onDateChange={setStartDate}
+                        placeholder="Pick start date"
                       />
                     </div>
+                    {watchStatus === "finished" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          End Date {isMovie ? "(optional)" : "*"}
+                        </label>
+                        <DatePicker
+                          date={endDate}
+                          onDateChange={setEndDate}
+                          placeholder={
+                            isMovie ? "Same as start date" : "Pick end date"
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {dateError && (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {dateError}
+                    </p>
+                  )}
+                  {watchStatus === "finished" && isMovie && !endDate && (
+                    <p className="text-sm text-zinc-500">
+                      For movies, end date defaults to start date if not
+                      specified.
+                    </p>
                   )}
                 </div>
               )}

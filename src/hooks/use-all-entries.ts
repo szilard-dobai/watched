@@ -100,6 +100,23 @@ export const useAllEntries = () => {
     },
   })
 
+  const updateEntryPlatformMutation = useMutation({
+    mutationFn: ({
+      listId,
+      entryId,
+      platform,
+    }: {
+      listId: string
+      entryId: string
+      platform: string
+    }) => entryApi.update(listId, entryId, { platform }),
+    onSuccess: (_, { entryId, platform }) => {
+      queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
+        old?.map((e) => (e._id === entryId ? { ...e, platform } : e)) ?? []
+      )
+    },
+  })
+
   const addWatch = async (
     listId: string,
     entryId: string,
@@ -152,6 +169,19 @@ export const useAllEntries = () => {
     }
   }
 
+  const updateEntryPlatform = async (
+    listId: string,
+    entryId: string,
+    platform: string
+  ): Promise<boolean> => {
+    try {
+      await updateEntryPlatformMutation.mutateAsync({ listId, entryId, platform })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   return {
     entries,
     isLoading,
@@ -161,5 +191,6 @@ export const useAllEntries = () => {
     updateWatch,
     deleteWatch,
     deleteEntry,
+    updateEntryPlatform,
   }
 }

@@ -60,6 +60,7 @@ export const GET = async (_request: Request, { params }: RouteParams) => {
             lastStartDate: 1,
             lastEndDate: 1,
             lastPlatform: 1,
+            platform: 1,
             createdAt: 1,
             updatedAt: 1,
             tmdbId: "$media.tmdbId",
@@ -126,7 +127,7 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
     }
 
     const updates = await request.json()
-    const allowedFields: string[] = []
+    const allowedFields: string[] = ["platform"]
 
     const filteredUpdates: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
@@ -178,6 +179,7 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
             lastStartDate: 1,
             lastEndDate: 1,
             lastPlatform: 1,
+            platform: 1,
             createdAt: 1,
             updatedAt: 1,
             tmdbId: "$media.tmdbId",

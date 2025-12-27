@@ -107,6 +107,7 @@ export interface Entry {
   imdbId?: string | null;
   originalLanguage: string;
   networks?: Network[];
+  platform?: string;
   watches: Watch[];
   entryStatus: EntryStatus;
   firstStartDate: string | null;
@@ -297,6 +298,7 @@ export interface DbEntry extends EntryMeta {
   listId: ObjectId;
   mediaId: ObjectId;
   addedByUserId: string;
+  platform?: string;
   watches: DbWatch[];
   createdAt: string;
   updatedAt: string;

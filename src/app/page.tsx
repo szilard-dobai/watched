@@ -65,6 +65,7 @@ const Home = () => {
     updateWatch,
     deleteWatch,
     deleteEntry,
+    updateEntryPlatform,
   } = useAllEntries()
   const { lists, isLoading: isListsLoading } = useLists()
 
@@ -539,6 +540,9 @@ const Home = () => {
         }
         onDeleteEntry={(entryId) =>
           deleteEntry(editingEntry?.listId ?? "", entryId)
+        }
+        onUpdateEntryPlatform={(entryId, platform) =>
+          updateEntryPlatform(editingEntry?.listId ?? "", entryId, platform)
         }
       />
     </div>

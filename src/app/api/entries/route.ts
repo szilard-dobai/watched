@@ -56,6 +56,7 @@ export const GET = async () => {
             lastStartDate: 1,
             lastEndDate: 1,
             lastPlatform: 1,
+            platform: 1,
             createdAt: 1,
             updatedAt: 1,
             tmdbId: "$media.tmdbId",

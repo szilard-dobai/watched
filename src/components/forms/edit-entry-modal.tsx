@@ -40,6 +40,7 @@ interface EditEntryModalProps {
   ) => Promise<boolean>;
   onDeleteWatch: (entryId: string, watchId: string) => Promise<boolean>;
   onDeleteEntry: (entryId: string) => Promise<boolean>;
+  onUpdateEntryPlatform: (entryId: string, platform: string) => Promise<boolean>;
 }
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
@@ -52,6 +53,7 @@ export const EditEntryModal = ({
   onUpdateWatch,
   onDeleteWatch,
   onDeleteEntry,
+  onUpdateEntryPlatform,
 }: EditEntryModalProps) => {
   const [showAddWatch, setShowAddWatch] = useState(false);
   const [newWatchStatus, setNewWatchStatus] = useState<WatchStatus>("finished");
@@ -79,6 +81,8 @@ export const EditEntryModal = ({
   const [deletingWatchId, setDeletingWatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [entryPlatform, setEntryPlatform] = useState(entry?.platform ?? "");
+  const [isUpdatingPlatform, setIsUpdatingPlatform] = useState(false);
 
   const isMovie = entry?.mediaType === "movie";
 
@@ -242,6 +246,22 @@ export const EditEntryModal = ({
     setDeletingWatchId(null);
   };
 
+  const handleUpdateEntryPlatform = async (platform: string) => {
+    if (!entry) return;
+
+    setIsUpdatingPlatform(true);
+    setError("");
+    setEntryPlatform(platform);
+
+    const success = await onUpdateEntryPlatform(entry._id, platform);
+    if (!success) {
+      setError("Failed to update platform");
+      setEntryPlatform(entry.platform ?? "");
+    }
+
+    setIsUpdatingPlatform(false);
+  };
+
   const handleDeleteEntry = async () => {
     if (!entry) return;
     if (!confirm("Are you sure you want to delete this entry?")) return;
@@ -329,6 +349,31 @@ export const EditEntryModal = ({
             </div>
           </div>
 
+          {entry.watches.length === 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Platform</label>
+              <Select
+                value={entryPlatform}
+                onValueChange={handleUpdateEntryPlatform}
+                disabled={isUpdatingPlatform}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Where to watch..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLATFORMS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-zinc-500">
+                Where you plan to watch this {entry.mediaType === "movie" ? "movie" : "show"}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">Watch History</label>
@@ -336,7 +381,12 @@ export const EditEntryModal = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setShowAddWatch(!showAddWatch)}
+                onClick={() => {
+                  if (!showAddWatch && entry.watches.length === 0 && entry.platform) {
+                    setNewWatchPlatform(entry.platform);
+                  }
+                  setShowAddWatch(!showAddWatch);
+                }}
               >
                 <Plus className="mr-1 h-3 w-3" />
                 Add Watch

@@ -63,6 +63,7 @@ export const mockEntries: Entry[] = [
     status: "Released",
     imdbId: "tt0137523",
     originalLanguage: "en",
+    watchStatus: "finished",
     watches: [
       {
         _id: "watch-1",
@@ -99,6 +100,7 @@ export const mockEntries: Entry[] = [
     status: "Ended",
     originalLanguage: "en",
     networks: [{ id: 174, name: "AMC", logoPath: "/pmvRmATOCaDykE6JrVoeYZlMnKQ.png" }],
+    watchStatus: "finished",
     watches: [
       {
         _id: "watch-2",

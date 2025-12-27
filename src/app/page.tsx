@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Film, Tv, Eye, List, Popcorn } from "lucide-react"
+import { Plus, Film, Tv, Eye, List, Popcorn, LayoutGrid, LayoutList } from "lucide-react"
 import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,10 +21,26 @@ import { AddEntryModal } from "@/components/forms/add-entry-modal"
 import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries"
 import { useLists } from "@/hooks/use-lists"
 import { entryApi } from "@/lib/api/fetchers"
-import { PLATFORMS, MEDIA_TYPE_OPTIONS } from "@/lib/constants"
-import type { DashboardFilterState, MediaType, EntryFormData } from "@/types"
+import { PLATFORMS, MEDIA_TYPE_OPTIONS, ENTRY_STATUS_OPTIONS } from "@/lib/constants"
+import type { DashboardFilterState, MediaType, EntryFormData, EntryStatus } from "@/types"
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
+
+const getStatusLabel = (status: EntryStatus) => {
+  const option = ENTRY_STATUS_OPTIONS.find((opt) => opt.value === status)
+  return option?.label ?? status
+}
+
+const getStatusColor = (status: EntryStatus) => {
+  switch (status) {
+    case "planned":
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+    case "in_progress":
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+    case "finished":
+      return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+  }
+}
 
 const Home = () => {
   const { data: session } = useSession()
@@ -32,6 +48,7 @@ const Home = () => {
   const { lists, isLoading: isListsLoading } = useLists()
 
   const [isAddEntryOpen, setIsAddEntryOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery")
 
   const [filters, setFilters] = useState<DashboardFilterState>({
     search: "",
@@ -195,7 +212,7 @@ const Home = () => {
           </Card>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-3">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
           <Input
             placeholder="Search titles..."
             value={filters.search}
@@ -267,6 +284,24 @@ const Home = () => {
               ))}
             </SelectContent>
           </Select>
+          <div className="ml-auto flex gap-1">
+            <Button
+              variant={viewMode === "gallery" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("gallery")}
+              title="Gallery view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+              title="List view"
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -295,7 +330,7 @@ const Home = () => {
               </>
             )}
           </div>
-        ) : (
+        ) : viewMode === "gallery" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredEntries.map((entry) => {
               const mostRecentWatch = getMostRecentWatch(entry)
@@ -331,12 +366,98 @@ const Home = () => {
                       <Badge variant="secondary" className="text-xs">
                         {entry.listName}
                       </Badge>
+                      <Badge className={`text-xs ${getStatusColor(entry.watchStatus)}`}>
+                        {getStatusLabel(entry.watchStatus)}
+                      </Badge>
                     </div>
                     {mostRecentWatch && (
                       <p className="mt-2 text-xs text-zinc-500">
                         {formatDate(mostRecentWatch.startDate)}
                         {mostRecentWatch.platform && ` • ${mostRecentWatch.platform}`}
                       </p>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredEntries.map((entry) => {
+              const mostRecentWatch = getMostRecentWatch(entry)
+              return (
+                <Link
+                  key={entry._id}
+                  href={`/lists/${entry.listId}`}
+                  className="flex gap-4 rounded-lg border border-zinc-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
+                >
+                  {entry.posterPath ? (
+                    <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded">
+                      <Image
+                        src={`${TMDB_IMAGE_BASE}${entry.posterPath}`}
+                        alt={entry.title}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-28 w-20 shrink-0 items-center justify-center rounded bg-zinc-200 dark:bg-zinc-800">
+                      <Film className="h-8 w-8 text-zinc-400" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-semibold">{entry.title}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <Badge variant="outline" className="text-xs">
+                            {entry.mediaType === "movie" ? "Movie" : "TV Show"}
+                          </Badge>
+                          <Badge className={`text-xs ${getStatusColor(entry.watchStatus)}`}>
+                            {getStatusLabel(entry.watchStatus)}
+                          </Badge>
+                          {mostRecentWatch?.platform && (
+                            <span className="text-sm text-zinc-500">
+                              {mostRecentWatch.platform}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      {entry.overview}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-zinc-500">
+                      {entry.voteAverage > 0 && (
+                        <span className="flex items-center gap-1">
+                          <span className="text-yellow-500">★</span>
+                          TMDB: {entry.voteAverage.toFixed(1)}/10
+                        </span>
+                      )}
+                      {mostRecentWatch && (
+                        <span>
+                          {formatDate(mostRecentWatch.startDate)}
+                          {mostRecentWatch.endDate &&
+                            mostRecentWatch.endDate !== mostRecentWatch.startDate &&
+                            ` → ${formatDate(mostRecentWatch.endDate)}`}
+                        </span>
+                      )}
+                      {entry.mediaType === "movie" && entry.runtime && (
+                        <span>{entry.runtime} min</span>
+                      )}
+                      {entry.mediaType === "tv" && entry.numberOfSeasons && (
+                        <span>{entry.numberOfSeasons} seasons</span>
+                      )}
+                    </div>
+                    {entry.genres && entry.genres.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {entry.genres.slice(0, 3).map((genre) => (
+                          <Badge key={genre.id} variant="secondary" className="text-xs">
+                            {genre.name}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </Link>

@@ -41,6 +41,7 @@ describe("list-helpers", () => {
       popularity: 50,
       status: "Released",
       originalLanguage: "en",
+      watchStatus: "finished",
       watches: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

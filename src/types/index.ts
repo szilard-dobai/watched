@@ -1,5 +1,6 @@
 export type MediaType = "movie" | "tv";
 export type ListRole = "owner" | "member";
+export type EntryStatus = "planned" | "in_progress" | "finished";
 
 export interface TMDBSearchResult {
   id: number;
@@ -104,6 +105,7 @@ export interface Entry {
   imdbId?: string | null;
   originalLanguage: string;
   networks?: Network[];
+  watchStatus: EntryStatus;
   watches: Watch[];
   createdAt: string;
   updatedAt: string;
@@ -131,6 +133,7 @@ export interface EntryFormData {
   imdbId?: string | null;
   originalLanguage: string;
   networks?: Network[];
+  watchStatus: EntryStatus;
   startDate: string;
   endDate?: string;
   platform?: string;
@@ -238,6 +241,7 @@ export interface DbEntry {
   imdbId?: string | null;
   originalLanguage: string;
   networks?: Network[];
+  watchStatus: EntryStatus;
   watches: DbWatch[];
   createdAt: string;
   updatedAt: string;

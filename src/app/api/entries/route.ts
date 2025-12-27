@@ -31,6 +31,7 @@ export const GET = async () => {
         _id: entry._id.toString(),
         listId: entry.listId.toString(),
         listName: list?.name ?? "Unknown List",
+        watchStatus: entry.watchStatus ?? "planned",
         watches,
         createdAt,
       }

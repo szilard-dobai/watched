@@ -26,7 +26,11 @@ export const GET = async (_request: Request, { params }: RouteParams) => {
       .toArray()
 
     return NextResponse.json(
-      listEntries.map((e) => ({ ...e, _id: e._id.toString() }))
+      listEntries.map((e) => ({
+        ...e,
+        _id: e._id.toString(),
+        watchStatus: e.watchStatus ?? "planned",
+      }))
     )
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -87,6 +91,7 @@ export const POST = async (request: Request, { params }: RouteParams) => {
       imdbId: data.imdbId,
       originalLanguage: data.originalLanguage,
       networks: data.networks,
+      watchStatus: data.watchStatus,
       watches: [
         {
           _id: new ObjectId().toString(),

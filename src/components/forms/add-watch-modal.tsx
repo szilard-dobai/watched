@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Textarea } from "@/components/ui/textarea"
-import { PLATFORMS } from "@/lib/constants"
-import type { Entry } from "@/types"
+import { PLATFORMS, ENTRY_STATUS_OPTIONS } from "@/lib/constants"
+import type { Entry, EntryStatus } from "@/types"
 
 interface AddWatchModalProps {
   open: boolean
@@ -31,6 +31,7 @@ interface AddWatchModalProps {
     endDate?: string
     platform?: string
     notes?: string
+    watchStatus?: EntryStatus
   }) => Promise<void>
   entry: Entry
 }
@@ -44,6 +45,7 @@ export const AddWatchModal = ({
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [platform, setPlatform] = useState("")
+  const [watchStatus, setWatchStatus] = useState<EntryStatus>(entry.watchStatus)
   const [notes, setNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -52,6 +54,7 @@ export const AddWatchModal = ({
     setStartDate(undefined)
     setEndDate(undefined)
     setPlatform("")
+    setWatchStatus(entry.watchStatus)
     setNotes("")
     setError("")
     onOpenChange(false)
@@ -70,6 +73,7 @@ export const AddWatchModal = ({
         endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
         platform: platform || undefined,
         notes: notes || undefined,
+        watchStatus: watchStatus !== entry.watchStatus ? watchStatus : undefined,
       })
       handleClose()
     } catch {
@@ -126,6 +130,25 @@ export const AddWatchModal = ({
                   {PLATFORMS.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select
+                value={watchStatus}
+                onValueChange={(value) => setWatchStatus(value as EntryStatus)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {ENTRY_STATUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -18,6 +18,14 @@ export const MEDIA_TYPE_OPTIONS = [
   { value: "tv", label: "TV Shows" },
 ] as const
 
+export const ENTRY_STATUSES = ["planned", "in_progress", "finished"] as const
+
+export const ENTRY_STATUS_OPTIONS = [
+  { value: "planned", label: "Planned" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "finished", label: "Finished" },
+] as const
+
 export const GENRES = [
   "Action",
   "Adventure",

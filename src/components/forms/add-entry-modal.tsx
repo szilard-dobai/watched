@@ -23,13 +23,14 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { Textarea } from "@/components/ui/textarea"
 import { TMDBSearch } from "@/components/forms/tmdb-search"
 import { useTmdbDetails } from "@/hooks/use-tmdb-details"
-import { PLATFORMS } from "@/lib/constants"
+import { PLATFORMS, ENTRY_STATUS_OPTIONS } from "@/lib/constants"
 import type {
   TMDBSearchResult,
   TMDBMovieDetails,
   TMDBTVDetails,
   EntryFormData,
   ListWithRole,
+  EntryStatus,
 } from "@/types"
 
 interface AddEntryModalProps {
@@ -55,6 +56,7 @@ export const AddEntryModal = ({
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [platform, setPlatform] = useState("")
+  const [watchStatus, setWatchStatus] = useState<EntryStatus>("planned")
   const [notes, setNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -86,6 +88,7 @@ export const AddEntryModal = ({
     setStartDate(undefined)
     setEndDate(undefined)
     setPlatform("")
+    setWatchStatus("planned")
     setNotes("")
     setError("")
   }
@@ -137,6 +140,7 @@ export const AddEntryModal = ({
               logoPath: n.logo_path,
             }))
           : undefined,
+        watchStatus,
         startDate: format(startDate, "yyyy-MM-dd"),
         endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
         platform: platform || undefined,
@@ -281,6 +285,25 @@ export const AddEntryModal = ({
                     {PLATFORMS.map((p) => (
                       <SelectItem key={p} value={p}>
                         {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status *</label>
+                <Select
+                  value={watchStatus}
+                  onValueChange={(value) => setWatchStatus(value as EntryStatus)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ENTRY_STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

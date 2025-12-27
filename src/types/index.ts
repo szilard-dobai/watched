@@ -1,6 +1,7 @@
 export type MediaType = "movie" | "tv";
 export type ListRole = "owner" | "member";
-export type EntryStatus = "planned" | "in_progress" | "finished";
+export type WatchStatus = "in_progress" | "finished";
+export type EntryStatus = "planned" | WatchStatus;
 
 export interface TMDBSearchResult {
   id: number;
@@ -72,6 +73,7 @@ export interface Network {
 
 export interface Watch {
   _id: string;
+  status: WatchStatus;
   startDate?: string;
   endDate?: string;
   platform?: string;
@@ -105,8 +107,13 @@ export interface Entry {
   imdbId?: string | null;
   originalLanguage: string;
   networks?: Network[];
-  watchStatus: EntryStatus;
   watches: Watch[];
+  entryStatus: EntryStatus;
+  firstStartDate: string | null;
+  firstEndDate: string | null;
+  lastStartDate: string | null;
+  lastEndDate: string | null;
+  lastPlatform: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -159,6 +166,14 @@ export type EntryFormData =
   | EntryFormDataPlanned
   | EntryFormDataInProgress
   | EntryFormDataFinished;
+
+export interface WatchFormData {
+  status: WatchStatus;
+  startDate?: string;
+  endDate?: string;
+  platform?: string;
+  notes?: string;
+}
 
 export interface List {
   _id: string;
@@ -228,6 +243,7 @@ export interface DbListMembership {
 
 export interface DbWatch {
   _id: string;
+  status: WatchStatus;
   startDate?: string;
   endDate?: string;
   platform?: string;
@@ -267,12 +283,20 @@ export interface Media extends Omit<DbMedia, "_id"> {
   _id: string;
 }
 
-export interface DbEntry {
+export interface EntryMeta {
+  entryStatus: EntryStatus;
+  firstStartDate: string | null;
+  firstEndDate: string | null;
+  lastStartDate: string | null;
+  lastEndDate: string | null;
+  lastPlatform: string | null;
+}
+
+export interface DbEntry extends EntryMeta {
   _id: ObjectId;
   listId: ObjectId;
   mediaId: ObjectId;
   addedByUserId: string;
-  watchStatus: EntryStatus;
   watches: DbWatch[];
   createdAt: string;
   updatedAt: string;

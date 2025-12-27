@@ -20,18 +20,18 @@ import {
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Textarea } from "@/components/ui/textarea"
-import { PLATFORMS, ENTRY_STATUS_OPTIONS } from "@/lib/constants"
-import type { Entry, EntryStatus } from "@/types"
+import { PLATFORMS, WATCH_STATUS_OPTIONS } from "@/lib/constants"
+import type { Entry, WatchStatus } from "@/types"
 
 interface AddWatchModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (data: {
-    startDate: string
+    status: WatchStatus
+    startDate?: string
     endDate?: string
     platform?: string
     notes?: string
-    watchStatus?: EntryStatus
   }) => Promise<void>
   entry: Entry
 }
@@ -42,10 +42,15 @@ export const AddWatchModal = ({
   onSubmit,
   entry,
 }: AddWatchModalProps) => {
+  const getMostRecentWatchStatus = (): WatchStatus => {
+    if (!entry.watches?.length) return "finished"
+    return entry.watches[entry.watches.length - 1].status
+  }
+
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [platform, setPlatform] = useState("")
-  const [watchStatus, setWatchStatus] = useState<EntryStatus>(entry.watchStatus)
+  const [status, setStatus] = useState<WatchStatus>(getMostRecentWatchStatus())
   const [notes, setNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -54,7 +59,7 @@ export const AddWatchModal = ({
     setStartDate(undefined)
     setEndDate(undefined)
     setPlatform("")
-    setWatchStatus(entry.watchStatus)
+    setStatus(getMostRecentWatchStatus())
     setNotes("")
     setError("")
     onOpenChange(false)
@@ -62,18 +67,17 @@ export const AddWatchModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!startDate) return
 
     setIsSubmitting(true)
     setError("")
 
     try {
       await onSubmit({
-        startDate: format(startDate, "yyyy-MM-dd"),
+        status,
+        startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
         endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
         platform: platform || undefined,
         notes: notes || undefined,
-        watchStatus: watchStatus !== entry.watchStatus ? watchStatus : undefined,
       })
       handleClose()
     } catch {
@@ -139,14 +143,14 @@ export const AddWatchModal = ({
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
               <Select
-                value={watchStatus}
-                onValueChange={(value) => setWatchStatus(value as EntryStatus)}
+                value={status}
+                onValueChange={(value) => setStatus(value as WatchStatus)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {ENTRY_STATUS_OPTIONS.map((opt) => (
+                  {WATCH_STATUS_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
                     </SelectItem>
@@ -175,7 +179,7 @@ export const AddWatchModal = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !startDate}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Adding..." : "Log Watch"}
             </Button>
           </DialogFooter>

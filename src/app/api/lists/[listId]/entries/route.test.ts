@@ -135,7 +135,7 @@ describe("/api/lists/[listId]/entries", () => {
       status: "Released",
       imdbId: "tt0816692",
       originalLanguage: "en",
-      watchStatus: "planned",
+      watchStatus: "finished",
       startDate: "2024-03-01",
       endDate: "2024-03-01",
       platform: "Netflix",
@@ -211,24 +211,55 @@ describe("/api/lists/[listId]/entries", () => {
       })
     })
 
-    it("returns 400 when entry already exists in list", async () => {
+    it("adds watch to existing entry when entry already exists in list", async () => {
       vi.mocked(checkListAccess).mockResolvedValue("member")
 
       const existingMediaId = new ObjectId()
+      const existingEntryId = new ObjectId()
       const mockMediaCollection = {
         findOne: vi.fn().mockResolvedValue({
           _id: existingMediaId,
           tmdbId: 550,
           mediaType: "movie",
+          title: "Fight Club",
+          originalTitle: "Fight Club",
+          overview: "An insomniac office worker...",
+          posterPath: "/poster.jpg",
+          backdropPath: "/backdrop.jpg",
+          releaseDate: "1999-10-15",
+          runtime: 139,
+          genres: [{ id: 18, name: "Drama" }],
+          voteAverage: 8.4,
+          voteCount: 26000,
+          popularity: 80,
+          status: "Released",
+          imdbId: "tt0137523",
+          originalLanguage: "en",
         }),
+      }
+
+      const existingWatch = {
+        _id: "existing-watch-id",
+        startDate: "2024-01-01",
+        endDate: "2024-01-01",
+        platform: "HBO Max",
+        notes: "First watch",
+        addedByUserId: mockUserId,
+        addedAt: "2024-01-01T00:00:00.000Z",
       }
 
       const mockEntriesCollection = {
         findOne: vi.fn().mockResolvedValue({
-          _id: new ObjectId(),
+          _id: existingEntryId,
           listId: new ObjectId(listId),
           mediaId: existingMediaId,
+          addedByUserId: mockUserId,
+          watchStatus: "finished",
+          watches: [existingWatch],
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         }),
+        updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
       }
 
       vi.mocked(getMediaCollection).mockResolvedValue(mockMediaCollection as never)
@@ -236,14 +267,26 @@ describe("/api/lists/[listId]/entries", () => {
 
       const request = new Request("http://localhost", {
         method: "POST",
-        body: JSON.stringify({ ...newEntryData, tmdbId: 550 }),
+        body: JSON.stringify({
+          ...newEntryData,
+          tmdbId: 550,
+          watchStatus: "finished",
+          startDate: "2024-03-15",
+          endDate: "2024-03-15",
+          platform: "Netflix",
+          notes: "Second watch",
+        }),
       })
 
       const response = await POST(request, createParams(listId))
       const data = await response.json()
 
-      expect(response.status).toBe(400)
-      expect(data.error).toBe("Entry already exists in this list")
+      expect(response.status).toBe(200)
+      expect(data.title).toBe("Fight Club")
+      expect(data.watches).toHaveLength(2)
+      expect(data.watches[1].startDate).toBe("2024-03-15")
+      expect(data.watches[1].platform).toBe("Netflix")
+      expect(mockEntriesCollection.updateOne).toHaveBeenCalled()
     })
 
     it("returns 403 when user has no access", async () => {

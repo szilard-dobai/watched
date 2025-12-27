@@ -34,13 +34,28 @@ export const GET = async () => {
         },
         { $unwind: "$media" },
         {
+          $addFields: {
+            watches: {
+              $sortArray: {
+                input: "$watches",
+                sortBy: { startDate: 1, addedAt: 1 },
+              },
+            },
+          },
+        },
+        {
           $project: {
             _id: { $toString: "$_id" },
             listId: { $toString: "$listId" },
             mediaId: { $toString: "$mediaId" },
             addedByUserId: 1,
-            watchStatus: { $ifNull: ["$watchStatus", "planned"] },
             watches: 1,
+            entryStatus: 1,
+            firstStartDate: 1,
+            firstEndDate: 1,
+            lastStartDate: 1,
+            lastEndDate: 1,
+            lastPlatform: 1,
             createdAt: 1,
             updatedAt: 1,
             tmdbId: "$media.tmdbId",

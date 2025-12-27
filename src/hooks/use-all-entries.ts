@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query-keys"
 import { entryApi } from "@/lib/api/fetchers"
-import type { Entry, EntryStatus } from "@/types"
+import type { Entry, WatchFormData } from "@/types"
 
 export interface EntryWithList extends Entry {
   listName: string
@@ -22,25 +22,6 @@ export const useAllEntries = () => {
     queryFn: entryApi.getAll,
   })
 
-  const updateStatusMutation = useMutation({
-    mutationFn: ({
-      listId,
-      entryId,
-      status,
-    }: {
-      listId: string
-      entryId: string
-      status: EntryStatus
-    }) => entryApi.update(listId, entryId, { watchStatus: status }),
-    onSuccess: (updatedEntry) => {
-      queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
-        old?.map((e) =>
-          e._id === updatedEntry._id ? { ...e, ...updatedEntry } : e
-        ) ?? []
-      )
-    },
-  })
-
   const addWatchMutation = useMutation({
     mutationFn: ({
       listId,
@@ -49,17 +30,40 @@ export const useAllEntries = () => {
     }: {
       listId: string
       entryId: string
-      watchData: {
-        startDate?: string
-        endDate?: string
-        platform?: string
-        notes?: string
-      }
-    }) => entryApi.addWatch(listId, entryId, watchData as { startDate: string }),
+      watchData: WatchFormData
+    }) => entryApi.addWatch(listId, entryId, watchData),
     onSuccess: (newWatch, { entryId }) => {
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
         old?.map((e) =>
           e._id === entryId ? { ...e, watches: [...e.watches, newWatch] } : e
+        ) ?? []
+      )
+    },
+  })
+
+  const updateWatchMutation = useMutation({
+    mutationFn: ({
+      listId,
+      entryId,
+      watchId,
+      watchData,
+    }: {
+      listId: string
+      entryId: string
+      watchId: string
+      watchData: WatchFormData
+    }) => entryApi.updateWatch(listId, entryId, watchId, watchData),
+    onSuccess: (_, { entryId, watchId, watchData }) => {
+      queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
+        old?.map((e) =>
+          e._id === entryId
+            ? {
+                ...e,
+                watches: e.watches.map((w) =>
+                  w._id === watchId ? { ...w, ...watchData } : w
+                ),
+              }
+            : e
         ) ?? []
       )
     },
@@ -96,31 +100,27 @@ export const useAllEntries = () => {
     },
   })
 
-  const updateStatus = async (
+  const addWatch = async (
     listId: string,
     entryId: string,
-    status: EntryStatus
+    watchData: WatchFormData
   ): Promise<boolean> => {
     try {
-      await updateStatusMutation.mutateAsync({ listId, entryId, status })
+      await addWatchMutation.mutateAsync({ listId, entryId, watchData })
       return true
     } catch {
       return false
     }
   }
 
-  const addWatch = async (
+  const updateWatch = async (
     listId: string,
     entryId: string,
-    watchData: {
-      startDate?: string
-      endDate?: string
-      platform?: string
-      notes?: string
-    }
+    watchId: string,
+    watchData: WatchFormData
   ): Promise<boolean> => {
     try {
-      await addWatchMutation.mutateAsync({ listId, entryId, watchData })
+      await updateWatchMutation.mutateAsync({ listId, entryId, watchId, watchData })
       return true
     } catch {
       return false
@@ -157,8 +157,8 @@ export const useAllEntries = () => {
     isLoading,
     error: error instanceof Error ? error.message : null,
     refetch,
-    updateStatus,
     addWatch,
+    updateWatch,
     deleteWatch,
     deleteEntry,
   }

@@ -26,6 +26,13 @@ export const ENTRY_STATUS_OPTIONS = [
   { value: "finished", label: "Finished" },
 ] as const
 
+export const WATCH_STATUSES = ["in_progress", "finished"] as const
+
+export const WATCH_STATUS_OPTIONS = [
+  { value: "in_progress", label: "In Progress" },
+  { value: "finished", label: "Finished" },
+] as const
+
 export const GENRES = [
   "Action",
   "Adventure",

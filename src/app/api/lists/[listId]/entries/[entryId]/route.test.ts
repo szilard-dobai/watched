@@ -13,8 +13,7 @@ const mockDbEntry = {
   listId: new ObjectId(listId),
   mediaId: mediaId,
   addedByUserId: mockUserId,
-  watchStatus: "planned",
-  watches: [{ _id: "watch-1", startDate: "2024-01-01", addedByUserId: mockUserId }],
+  watches: [{ _id: "watch-1", status: "planned", startDate: "2024-01-01", addedByUserId: mockUserId, addedAt: "2024-01-01T00:00:00.000Z" }],
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
 }
@@ -30,8 +29,7 @@ const mockAggregatedEntry = {
   originalTitle: "Fight Club",
   overview: "An insomniac office worker...",
   posterPath: "/poster.jpg",
-  watchStatus: "planned",
-  watches: [{ _id: "watch-1", startDate: "2024-01-01", addedByUserId: mockUserId }],
+  watches: [{ _id: "watch-1", status: "planned", startDate: "2024-01-01", addedByUserId: mockUserId, addedAt: "2024-01-01T00:00:00.000Z" }],
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
 }
@@ -118,16 +116,15 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
   })
 
   describe("PATCH", () => {
-    it("updates entry watchStatus successfully with permission", async () => {
+    it("updates entry successfully with permission", async () => {
       vi.mocked(checkListAccess).mockResolvedValue("owner")
       vi.mocked(checkEntryPermission).mockReturnValue(true)
 
-      const updatedAggregatedEntry = { ...mockAggregatedEntry, watchStatus: "finished" }
       const mockEntriesCollection = {
         findOne: vi.fn().mockResolvedValue(mockDbEntry),
         updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
         aggregate: vi.fn().mockReturnValue({
-          toArray: vi.fn().mockResolvedValue([updatedAggregatedEntry]),
+          toArray: vi.fn().mockResolvedValue([mockAggregatedEntry]),
         }),
       }
 
@@ -135,17 +132,17 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ watchStatus: "finished" }),
+        body: JSON.stringify({}),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.watchStatus).toBe("finished")
+      expect(data.title).toBe("Fight Club")
     })
 
-    it("only updates allowed fields (watchStatus)", async () => {
+    it("only updates allowed fields and ignores others", async () => {
       vi.mocked(checkListAccess).mockResolvedValue("owner")
       vi.mocked(checkEntryPermission).mockReturnValue(true)
 
@@ -162,7 +159,6 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
       const request = new Request("http://localhost", {
         method: "PATCH",
         body: JSON.stringify({
-          watchStatus: "in_progress",
           title: "Hacked Title",
           tmdbId: 999,
           addedByUserId: "hacker",
@@ -176,7 +172,6 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
         expect.anything(),
         expect.objectContaining({
           $set: expect.objectContaining({
-            watchStatus: "in_progress",
             updatedAt: expect.any(String),
           }),
         })
@@ -200,7 +195,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ watchStatus: "finished" }),
+        body: JSON.stringify({}),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
@@ -222,7 +217,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ watchStatus: "finished" }),
+        body: JSON.stringify({}),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
@@ -237,7 +232,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ watchStatus: "finished" }),
+        body: JSON.stringify({}),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))
@@ -252,7 +247,7 @@ describe("/api/lists/[listId]/entries/[entryId]", () => {
 
       const request = new Request("http://localhost", {
         method: "PATCH",
-        body: JSON.stringify({ watchStatus: "finished" }),
+        body: JSON.stringify({}),
       })
 
       const response = await PATCH(request, createParams(listId, entryId))

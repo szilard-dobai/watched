@@ -5,7 +5,7 @@ import Image from "next/image"
 import { MoreVertical, Plus, Trash2, Star, Film, Tv, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import type { Entry, ListRole, EntryStatus } from "@/types"
+import type { Entry, ListRole, WatchStatus } from "@/types"
 
 interface EntryCardProps {
   entry: Entry
@@ -17,13 +17,12 @@ interface EntryCardProps {
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
 
-const getStatusConfig = (status: EntryStatus) => {
+const getStatusConfig = (status: WatchStatus | null) => {
   switch (status) {
     case "finished":
       return { label: "completed", className: "bg-green-100 text-green-800" }
     case "in_progress":
       return { label: "watching", className: "bg-yellow-100 text-yellow-800" }
-    case "planned":
     default:
       return { label: "planned", className: "bg-zinc-100 text-zinc-800" }
   }
@@ -41,11 +40,7 @@ export const EntryCard = ({
   const canEdit = listRole === "owner" || entry.addedByUserId === currentUserId
 
   const mostRecentWatch =
-    entry.watches.length > 0
-      ? entry.watches.reduce((latest, watch) =>
-          new Date(watch.addedAt) > new Date(latest.addedAt) ? watch : latest
-        )
-      : null
+    entry.watches.length > 0 ? entry.watches[entry.watches.length - 1] : null
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -55,7 +50,7 @@ export const EntryCard = ({
     })
   }
 
-  const statusConfig = getStatusConfig(entry.watchStatus)
+  const statusConfig = getStatusConfig(mostRecentWatch?.status ?? null)
   const rating = Math.round(entry.voteAverage * 10) / 10
   const genres = entry.genres?.slice(0, 2).map((g) => g.name).join(", ") || ""
 

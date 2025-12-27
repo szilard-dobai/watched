@@ -3,7 +3,8 @@ import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
 import { checkListAccess } from "@/lib/api/list-helpers"
 import { getEntriesCollection, getMediaCollection } from "@/lib/db/collections"
-import type { EntryFormData } from "@/types"
+import { computeEntryMeta } from "@/lib/entry-meta"
+import type { DbWatch, EntryFormData } from "@/types"
 
 interface RouteParams {
   params: Promise<{ listId: string }>
@@ -34,13 +35,28 @@ export const GET = async (_request: Request, { params }: RouteParams) => {
         },
         { $unwind: "$media" },
         {
+          $addFields: {
+            watches: {
+              $sortArray: {
+                input: "$watches",
+                sortBy: { startDate: 1, addedAt: 1 },
+              },
+            },
+          },
+        },
+        {
           $project: {
             _id: { $toString: "$_id" },
             listId: { $toString: "$listId" },
             mediaId: { $toString: "$mediaId" },
             addedByUserId: 1,
-            watchStatus: { $ifNull: ["$watchStatus", "planned"] },
             watches: 1,
+            entryStatus: 1,
+            firstStartDate: 1,
+            firstEndDate: 1,
+            lastStartDate: 1,
+            lastEndDate: 1,
+            lastPlatform: 1,
             createdAt: 1,
             updatedAt: 1,
             tmdbId: "$media.tmdbId",
@@ -134,32 +150,84 @@ export const POST = async (request: Request, { params }: RouteParams) => {
       mediaId: mediaDoc._id,
     })
 
-    if (existingEntry) {
-      return NextResponse.json(
-        { error: "Entry already exists in this list" },
-        { status: 400 }
-      )
-    }
-
-    const entryId = new ObjectId()
-
-    const entry = {
-      _id: entryId,
-      listId: new ObjectId(listId),
-      mediaId: mediaDoc._id,
-      addedByUserId: session.user.id,
-      watchStatus: data.watchStatus,
-      watches: [
-        {
+    const isPlanned = data.watchStatus === "planned"
+    const newWatch = isPlanned
+      ? null
+      : {
           _id: new ObjectId().toString(),
+          status: data.watchStatus,
           startDate: data.startDate,
           endDate: data.endDate,
           platform: data.platform,
           notes: data.notes,
           addedByUserId: session.user.id,
           addedAt: now,
+        }
+
+    if (existingEntry) {
+      const updatedWatches: DbWatch[] = newWatch
+        ? [...existingEntry.watches, newWatch]
+        : existingEntry.watches
+
+      const meta = computeEntryMeta(updatedWatches)
+
+      if (newWatch) {
+        await entries.updateOne(
+          { _id: existingEntry._id },
+          {
+            $push: { watches: newWatch },
+            $set: { updatedAt: now, ...meta },
+          }
+        )
+      }
+
+      return NextResponse.json(
+        {
+          _id: existingEntry._id.toString(),
+          listId: listId,
+          mediaId: mediaDoc._id.toString(),
+          addedByUserId: existingEntry.addedByUserId,
+          tmdbId: mediaDoc.tmdbId,
+          mediaType: mediaDoc.mediaType,
+          title: mediaDoc.title,
+          originalTitle: mediaDoc.originalTitle,
+          overview: mediaDoc.overview,
+          posterPath: mediaDoc.posterPath,
+          backdropPath: mediaDoc.backdropPath,
+          releaseDate: mediaDoc.releaseDate,
+          firstAirDate: mediaDoc.firstAirDate,
+          runtime: mediaDoc.runtime,
+          episodeRunTime: mediaDoc.episodeRunTime,
+          numberOfSeasons: mediaDoc.numberOfSeasons,
+          numberOfEpisodes: mediaDoc.numberOfEpisodes,
+          genres: mediaDoc.genres,
+          voteAverage: mediaDoc.voteAverage,
+          voteCount: mediaDoc.voteCount,
+          popularity: mediaDoc.popularity,
+          status: mediaDoc.status,
+          imdbId: mediaDoc.imdbId,
+          originalLanguage: mediaDoc.originalLanguage,
+          networks: mediaDoc.networks,
+          watches: updatedWatches,
+          ...meta,
+          createdAt: existingEntry.createdAt,
+          updatedAt: now,
         },
-      ],
+        { status: 200 }
+      )
+    }
+
+    const entryId = new ObjectId()
+    const watches: DbWatch[] = newWatch ? [newWatch] : []
+    const meta = computeEntryMeta(watches)
+
+    const entry = {
+      _id: entryId,
+      listId: new ObjectId(listId),
+      mediaId: mediaDoc._id,
+      addedByUserId: session.user.id,
+      watches,
+      ...meta,
       createdAt: now,
       updatedAt: now,
     }
@@ -193,8 +261,8 @@ export const POST = async (request: Request, { params }: RouteParams) => {
         imdbId: mediaDoc.imdbId,
         originalLanguage: mediaDoc.originalLanguage,
         networks: mediaDoc.networks,
-        watchStatus: data.watchStatus,
-        watches: entry.watches,
+        watches,
+        ...meta,
         createdAt: now,
         updatedAt: now,
       },

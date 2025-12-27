@@ -6,6 +6,7 @@ import type {
   TMDBMovieDetails,
   TMDBTVDetails,
   ListRole,
+  WatchFormData,
 } from "@/types"
 import type { EntryWithList } from "@/hooks/use-all-entries"
 
@@ -105,16 +106,7 @@ export const entryApi = {
       method: "DELETE",
     }),
 
-  addWatch: (
-    listId: string,
-    entryId: string,
-    watchData: {
-      startDate: string
-      endDate?: string
-      platform?: string
-      notes?: string
-    }
-  ) =>
+  addWatch: (listId: string, entryId: string, watchData: WatchFormData) =>
     fetchJson<Entry["watches"][number]>(
       `/api/lists/${listId}/entries/${entryId}/watches`,
       {
@@ -128,6 +120,21 @@ export const entryApi = {
     fetchJson<{ success: boolean }>(
       `/api/lists/${listId}/entries/${entryId}/watches/${watchId}`,
       { method: "DELETE" }
+    ),
+
+  updateWatch: (
+    listId: string,
+    entryId: string,
+    watchId: string,
+    watchData: WatchFormData
+  ) =>
+    fetchJson<{ success: boolean }>(
+      `/api/lists/${listId}/entries/${entryId}/watches/${watchId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(watchData),
+      }
     ),
 }
 

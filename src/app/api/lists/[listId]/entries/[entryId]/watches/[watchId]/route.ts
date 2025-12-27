@@ -3,7 +3,8 @@ import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
 import { checkListAccess } from "@/lib/api/list-helpers"
 import { getEntriesCollection } from "@/lib/db/collections"
-import type { Watch } from "@/types"
+import { computeEntryMeta } from "@/lib/entry-meta"
+import type { DbWatch, Watch } from "@/types"
 
 interface RouteParams {
   params: Promise<{ listId: string; entryId: string; watchId: string }>
@@ -41,18 +42,34 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
       )
     }
 
-    const { startDate, endDate, platform, notes } = await request.json()
+    const { status, startDate, endDate, platform, notes } = await request.json()
     const now = new Date().toISOString()
+
+    const updatedWatches: DbWatch[] = entry.watches.map((w: DbWatch) =>
+      w._id === watchId
+        ? {
+            ...w,
+            status: status ?? w.status,
+            startDate,
+            endDate,
+            platform,
+            notes,
+          }
+        : w
+    )
+    const meta = computeEntryMeta(updatedWatches)
 
     await entries.updateOne(
       { _id: new ObjectId(entryId), "watches._id": watchId },
       {
         $set: {
-          "watches.$.startDate": startDate ?? watch.startDate,
+          "watches.$.status": status ?? watch.status,
+          "watches.$.startDate": startDate,
           "watches.$.endDate": endDate,
           "watches.$.platform": platform,
           "watches.$.notes": notes,
           updatedAt: now,
+          ...meta,
         },
       }
     )
@@ -95,19 +112,19 @@ export const DELETE = async (_request: Request, { params }: RouteParams) => {
       )
     }
 
-    if (entry.watches?.length === 1) {
-      return NextResponse.json(
-        { error: "Cannot delete the last watch. Delete the entry instead." },
-        { status: 400 }
-      )
-    }
-
     const now = new Date().toISOString()
+
+    const updatedWatches: DbWatch[] = entry.watches.filter(
+      (w: DbWatch) => w._id !== watchId
+    )
+    const meta = computeEntryMeta(updatedWatches)
 
     await entries.updateOne(
       { _id: new ObjectId(entryId) },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { $pull: { watches: { _id: watchId } }, $set: { updatedAt: now } } as any
+      {
+        $pull: { watches: { _id: watchId } },
+        $set: { updatedAt: now, ...meta },
+      }
     )
 
     return NextResponse.json({ success: true })

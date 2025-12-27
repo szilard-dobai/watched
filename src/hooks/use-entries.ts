@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query-keys"
 import { entryApi } from "@/lib/api/fetchers"
-import type { Entry, EntryFormData } from "@/types"
+import type { Entry, EntryFormData, WatchFormData } from "@/types"
 
 export const useEntries = (listId: string | null) => {
   const queryClient = useQueryClient()
@@ -77,12 +77,7 @@ export const useEntries = (listId: string | null) => {
       watchData,
     }: {
       entryId: string
-      watchData: {
-        startDate: string
-        endDate?: string
-        platform?: string
-        notes?: string
-      }
+      watchData: WatchFormData
     }) => {
       if (!listId) throw new Error("No list selected")
       return entryApi.addWatch(listId, entryId, watchData)
@@ -151,12 +146,7 @@ export const useEntries = (listId: string | null) => {
 
   const addWatch = async (
     entryId: string,
-    watchData: {
-      startDate: string
-      endDate?: string
-      platform?: string
-      notes?: string
-    }
+    watchData: WatchFormData
   ): Promise<boolean> => {
     try {
       await addWatchMutation.mutateAsync({ entryId, watchData })

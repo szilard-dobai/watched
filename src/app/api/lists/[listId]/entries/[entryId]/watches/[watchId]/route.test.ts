@@ -227,27 +227,6 @@ describe("/api/lists/[listId]/entries/[entryId]/watches/[watchId]", () => {
       expect(data.success).toBe(true)
     })
 
-    it("returns 400 when trying to delete the last watch", async () => {
-      vi.mocked(checkListAccess).mockResolvedValue("owner")
-
-      const entryWithOneWatch = {
-        ...mockEntry,
-        watches: [{ _id: watchId, startDate: "2024-01-01", addedByUserId: mockUserId }],
-      }
-
-      const mockEntriesCollection = {
-        findOne: vi.fn().mockResolvedValue(entryWithOneWatch),
-      }
-
-      vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
-
-      const response = await DELETE(new Request("http://localhost"), createParams(listId, entryId, watchId))
-      const data = await response.json()
-
-      expect(response.status).toBe(400)
-      expect(data.error).toBe("Cannot delete the last watch. Delete the entry instead.")
-    })
-
     it("returns 403 when member tries to delete another member's watch", async () => {
       vi.mocked(checkListAccess).mockResolvedValue("member")
 

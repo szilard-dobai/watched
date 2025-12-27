@@ -61,8 +61,8 @@ const Home = () => {
     entries,
     isLoading: isEntriesLoading,
     refetch,
-    updateStatus,
     addWatch,
+    updateWatch,
     deleteWatch,
     deleteEntry,
   } = useAllEntries()
@@ -125,9 +125,7 @@ const Home = () => {
 
   const getMostRecentWatch = (entry: EntryWithList) => {
     if (!entry.watches?.length) return null
-    return entry.watches.reduce((latest, watch) =>
-      new Date(watch.addedAt) > new Date(latest.addedAt) ? watch : latest
-    )
+    return entry.watches[entry.watches.length - 1]
   }
 
   const formatDate = (dateString: string) => {
@@ -356,7 +354,7 @@ const Home = () => {
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {filteredEntries.map((entry) => {
               const mostRecentWatch = getMostRecentWatch(entry)
-              const statusConfig = getStatusConfig(entry.watchStatus)
+              const statusConfig = getStatusConfig(mostRecentWatch?.status ?? "planned")
               const rating = Math.round(entry.voteAverage * 10) / 10
               const genres = entry.genres?.slice(0, 2).map((g) => g.name).join(", ") || ""
               return (
@@ -465,8 +463,8 @@ const Home = () => {
                           <Badge variant="outline" className="text-xs">
                             {entry.mediaType === "movie" ? "Movie" : "TV Show"}
                           </Badge>
-                          <Badge className={`text-xs ${getStatusColor(entry.watchStatus)}`}>
-                            {getStatusLabel(entry.watchStatus)}
+                          <Badge className={`text-xs ${getStatusColor(mostRecentWatch?.status ?? "planned")}`}>
+                            {getStatusLabel(mostRecentWatch?.status ?? "planned")}
                           </Badge>
                           {mostRecentWatch?.platform && (
                             <span className="text-sm text-zinc-500">
@@ -530,11 +528,11 @@ const Home = () => {
         open={!!editingEntry}
         onOpenChange={(open) => !open && setEditingEntry(null)}
         entry={editingEntry}
-        onUpdateStatus={(entryId, status) =>
-          updateStatus(editingEntry?.listId ?? "", entryId, status)
-        }
         onAddWatch={(entryId, data) =>
           addWatch(editingEntry?.listId ?? "", entryId, data)
+        }
+        onUpdateWatch={(entryId, watchId, data) =>
+          updateWatch(editingEntry?.listId ?? "", entryId, watchId, data)
         }
         onDeleteWatch={(entryId, watchId) =>
           deleteWatch(editingEntry?.listId ?? "", entryId, watchId)

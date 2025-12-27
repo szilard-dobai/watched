@@ -54,6 +54,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const request = new Request("http://localhost", {
         method: "POST",
         body: JSON.stringify({
+          status: "finished",
           startDate: "2024-02-01",
           endDate: "2024-02-01",
           platform: "Netflix",
@@ -65,6 +66,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const data = await response.json()
 
       expect(response.status).toBe(201)
+      expect(data.status).toBe("finished")
       expect(data.startDate).toBe("2024-02-01")
       expect(data.platform).toBe("Netflix")
       expect(data.notes).toBe("Rewatch")
@@ -85,7 +87,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const request = new Request("http://localhost", {
         method: "POST",
         body: JSON.stringify({
-          startDate: "2024-03-01",
+          status: "in_progress",
         }),
       })
 
@@ -93,16 +95,16 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const data = await response.json()
 
       expect(response.status).toBe(201)
-      expect(data.startDate).toBe("2024-03-01")
+      expect(data.status).toBe("in_progress")
     })
 
-    it("returns 400 when start date is missing", async () => {
+    it("returns 400 when status is missing", async () => {
       vi.mocked(checkListAccess).mockResolvedValue("member")
 
       const request = new Request("http://localhost", {
         method: "POST",
         body: JSON.stringify({
-          endDate: "2024-02-01",
+          startDate: "2024-02-01",
           platform: "Netflix",
         }),
       })
@@ -111,7 +113,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toBe("Start date is required")
+      expect(data.error).toBe("Status is required")
     })
 
     it("returns 404 when entry not found", async () => {
@@ -126,7 +128,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const request = new Request("http://localhost", {
         method: "POST",
         body: JSON.stringify({
-          startDate: "2024-02-01",
+          status: "finished",
         }),
       })
 
@@ -143,7 +145,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const request = new Request("http://localhost", {
         method: "POST",
         body: JSON.stringify({
-          startDate: "2024-02-01",
+          status: "finished",
         }),
       })
 
@@ -160,7 +162,7 @@ describe("/api/lists/[listId]/entries/[entryId]/watches", () => {
       const request = new Request("http://localhost", {
         method: "POST",
         body: JSON.stringify({
-          startDate: "2024-02-01",
+          status: "finished",
         }),
       })
 

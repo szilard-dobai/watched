@@ -1,62 +1,62 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Plus, Film, Tv, Eye, List, Popcorn, LayoutGrid, LayoutList, Star, Calendar } from "lucide-react"
-import { useSession } from "@/lib/auth-client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { UserMenu } from "@/components/auth/user-menu";
+import { AddEntryModal } from "@/components/forms/add-entry-modal";
+import { EditEntryModal } from "@/components/forms/edit-entry-modal";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { UserMenu } from "@/components/auth/user-menu"
-import { AddEntryModal } from "@/components/forms/add-entry-modal"
-import { EditEntryModal } from "@/components/forms/edit-entry-modal"
-import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries"
-import { useLists } from "@/hooks/use-lists"
-import { entryApi } from "@/lib/api/fetchers"
-import { PLATFORMS, MEDIA_TYPE_OPTIONS, ENTRY_STATUS_OPTIONS } from "@/lib/constants"
-import type { DashboardFilterState, MediaType, EntryFormData, EntryStatus } from "@/types"
+} from "@/components/ui/select";
+import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries";
+import { useLists } from "@/hooks/use-lists";
+import { entryApi } from "@/lib/api/fetchers";
+import { useSession } from "@/lib/auth-client";
+import { MEDIA_TYPE_OPTIONS, PLATFORMS } from "@/lib/constants";
+import type {
+  DashboardFilterState,
+  EntryFormData,
+  EntryStatus,
+  MediaType,
+} from "@/types";
+import {
+  Calendar,
+  Eye,
+  Film,
+  LayoutGrid,
+  LayoutList,
+  List,
+  Plus,
+  Popcorn,
+  Star,
+  Tv,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
 
 const getStatusConfig = (status: EntryStatus) => {
   switch (status) {
     case "finished":
-      return { label: "completed", className: "bg-green-100 text-green-800" }
+      return { label: "Finished", className: "bg-green-100 text-green-800" };
     case "in_progress":
-      return { label: "watching", className: "bg-yellow-100 text-yellow-800" }
+      return { label: "Watching", className: "bg-yellow-100 text-yellow-800" };
     case "planned":
     default:
-      return { label: "planned", className: "bg-zinc-100 text-zinc-800" }
+      return { label: "Planned", className: "bg-zinc-100 text-zinc-800" };
   }
-}
-
-const getStatusColor = (status: EntryStatus) => {
-  switch (status) {
-    case "planned":
-      return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-    case "in_progress":
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
-    case "finished":
-      return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-  }
-}
-
-const getStatusLabel = (status: EntryStatus) => {
-  const option = ENTRY_STATUS_OPTIONS.find((opt) => opt.value === status)
-  return option?.label ?? status
-}
+};
 
 const Home = () => {
-  const { data: session } = useSession()
+  const { data: session } = useSession();
   const {
     entries,
     isLoading: isEntriesLoading,
@@ -66,12 +66,12 @@ const Home = () => {
     deleteWatch,
     deleteEntry,
     updateEntryPlatform,
-  } = useAllEntries()
-  const { lists, isLoading: isListsLoading } = useLists()
+  } = useAllEntries();
+  const { lists, isLoading: isListsLoading } = useLists();
 
-  const [isAddEntryOpen, setIsAddEntryOpen] = useState(false)
-  const [editingEntry, setEditingEntry] = useState<EntryWithList | null>(null)
-  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery")
+  const [isAddEntryOpen, setIsAddEntryOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<EntryWithList | null>(null);
+  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
 
   const [filters, setFilters] = useState<DashboardFilterState>({
     search: "",
@@ -79,76 +79,93 @@ const Home = () => {
     mediaType: "all",
     genre: "all",
     platform: "all",
-  })
+  });
 
   const allGenres = useMemo(() => {
-    const genreSet = new Set<string>()
+    const genreSet = new Set<string>();
     entries.forEach((entry) => {
-      entry.genres?.forEach((g) => genreSet.add(g.name))
-    })
-    return Array.from(genreSet).sort()
-  }, [entries])
+      entry.genres?.forEach((g) => genreSet.add(g.name));
+    });
+    return Array.from(genreSet).sort();
+  }, [entries]);
 
   const stats = useMemo(() => {
-    const totalMovies = entries.filter((e) => e.mediaType === "movie").length
-    const totalTvShows = entries.filter((e) => e.mediaType === "tv").length
-    const totalWatches = entries.reduce((sum, e) => sum + (e.watches?.length ?? 0), 0)
+    const totalMovies = entries.filter((e) => e.mediaType === "movie").length;
+    const totalTvShows = entries.filter((e) => e.mediaType === "tv").length;
+    const totalWatches = entries.reduce(
+      (sum, e) => sum + (e.watches?.length ?? 0),
+      0
+    );
     const ratings = entries
       .filter((e) => e.voteAverage > 0)
-      .map((e) => e.voteAverage)
+      .map((e) => e.voteAverage);
     const averageRating =
-      ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null
+      ratings.length > 0
+        ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+        : null;
 
-    return { totalMovies, totalTvShows, totalWatches, totalEntries: entries.length, averageRating }
-  }, [entries])
+    return {
+      totalMovies,
+      totalTvShows,
+      totalWatches,
+      totalEntries: entries.length,
+      averageRating,
+    };
+  }, [entries]);
 
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
-      if (filters.search && !entry.title.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false
+      if (
+        filters.search &&
+        !entry.title.toLowerCase().includes(filters.search.toLowerCase())
+      ) {
+        return false;
       }
       if (filters.listId !== "all" && entry.listId !== filters.listId) {
-        return false
+        return false;
       }
-      if (filters.mediaType !== "all" && entry.mediaType !== filters.mediaType) {
-        return false
+      if (
+        filters.mediaType !== "all" &&
+        entry.mediaType !== filters.mediaType
+      ) {
+        return false;
       }
-      if (filters.genre !== "all" && !entry.genres?.some((g) => g.name === filters.genre)) {
-        return false
+      if (
+        filters.genre !== "all" &&
+        !entry.genres?.some((g) => g.name === filters.genre)
+      ) {
+        return false;
       }
       if (filters.platform !== "all") {
-        const hasWatchOnPlatform = entry.watches?.some((w) => w.platform === filters.platform)
-        if (!hasWatchOnPlatform) return false
+        const hasWatchOnPlatform = entry.watches?.some(
+          (w) => w.platform === filters.platform
+        );
+        if (!hasWatchOnPlatform) return false;
       }
-      return true
-    })
-  }, [entries, filters])
-
-  const getMostRecentWatch = (entry: EntryWithList) => {
-    if (!entry.watches?.length) return null
-    return entry.watches[entry.watches.length - 1]
-  }
+      return true;
+    });
+  }, [entries, filters]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   const handleAddEntry = async (listId: string, data: EntryFormData) => {
-    await entryApi.create(listId, data)
-    refetch()
-  }
+    await entryApi.create(listId, data);
+    refetch();
+  };
 
   if (!session) {
-    return null
+    return null;
   }
 
-  const defaultListId = lists[0]?._id
+  const defaultListId = lists[0]?._id;
 
-  const isLoading = isEntriesLoading || isListsLoading
+  const isLoading = isEntriesLoading || isListsLoading;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -237,12 +254,16 @@ const Home = () => {
           <Input
             placeholder="Search titles..."
             value={filters.search}
-            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, search: e.target.value }))
+            }
             className="w-full sm:w-64"
           />
           <Select
             value={filters.listId}
-            onValueChange={(value) => setFilters((f) => ({ ...f, listId: value }))}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, listId: value }))
+            }
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Lists" />
@@ -259,7 +280,10 @@ const Home = () => {
           <Select
             value={filters.mediaType}
             onValueChange={(value) =>
-              setFilters((f) => ({ ...f, mediaType: value as MediaType | "all" }))
+              setFilters((f) => ({
+                ...f,
+                mediaType: value as MediaType | "all",
+              }))
             }
           >
             <SelectTrigger className="w-[120px]">
@@ -275,7 +299,9 @@ const Home = () => {
           </Select>
           <Select
             value={filters.genre}
-            onValueChange={(value) => setFilters((f) => ({ ...f, genre: value }))}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, genre: value }))
+            }
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Genres" />
@@ -291,7 +317,9 @@ const Home = () => {
           </Select>
           <Select
             value={filters.platform}
-            onValueChange={(value) => setFilters((f) => ({ ...f, platform: value }))}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, platform: value }))
+            }
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Platforms" />
@@ -354,16 +382,15 @@ const Home = () => {
         ) : viewMode === "gallery" ? (
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {filteredEntries.map((entry) => {
-              const mostRecentWatch = getMostRecentWatch(entry)
-              const statusConfig = getStatusConfig(mostRecentWatch?.status ?? "planned")
-              const rating = Math.round(entry.voteAverage * 10) / 10
-              const genres = entry.genres?.slice(0, 2).map((g) => g.name).join(", ") || ""
+              const statusConfig = getStatusConfig(entry.entryStatus);
+              const rating = Math.round(entry.voteAverage * 10) / 10;
+              const genres = entry.genres?.map((g) => g.name).join(", ") || "";
               return (
                 <button
                   key={entry._id}
                   type="button"
                   onClick={() => setEditingEntry(entry)}
-                  className="group overflow-hidden rounded-xl border border-zinc-200 bg-white text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
+                  className="group overflow-hidden rounded-xl border border-zinc-200 bg-white text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 cursor-pointer"
                 >
                   <div className="relative aspect-2/3 w-full bg-zinc-200 dark:bg-zinc-800">
                     {entry.posterPath ? (
@@ -377,9 +404,15 @@ const Home = () => {
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         {entry.mediaType === "movie" ? (
-                          <Film className="h-16 w-16 text-zinc-400" strokeWidth={1} />
+                          <Film
+                            className="h-16 w-16 text-zinc-400"
+                            strokeWidth={1}
+                          />
                         ) : (
-                          <Tv className="h-16 w-16 text-zinc-400" strokeWidth={1} />
+                          <Tv
+                            className="h-16 w-16 text-zinc-400"
+                            strokeWidth={1}
+                          />
                         )}
                       </div>
                     )}
@@ -398,10 +431,22 @@ const Home = () => {
                         {rating}
                       </span>
                     </div>
+
+                    {!!entry.watches.length && (
+                      <div className="absolute right-3 bottom-3">
+                        <span className="rounded-full px-3 py-1 text-xs font-medium bg-purple-100 text-purple-800">
+                          {entry.watches.length} watch
+                          {entry.watches.length > 1 && "es"}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold line-clamp-2" title={entry.title}>
+                    <h3
+                      className="text-lg font-semibold line-clamp-2"
+                      title={entry.title}
+                    >
                       {entry.title}
                     </h3>
 
@@ -409,37 +454,42 @@ const Home = () => {
                       <Badge variant="outline" className="text-xs">
                         {entry.mediaType === "movie" ? "Movie" : "TV"}
                       </Badge>
-                      {mostRecentWatch?.platform && (
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                          {mostRecentWatch.platform}
-                        </span>
-                      )}
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                        {entry.lastPlatform || entry.platform}
+                      </span>
                     </div>
 
                     <div className="mt-3 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-                      {mostRecentWatch?.startDate && (
+                      {entry.lastStartDate && (
                         <p className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
-                          {formatDate(mostRecentWatch.startDate)}
+                          {formatDate(entry.lastStartDate)}
+                          {entry.lastEndDate &&
+                            entry.lastEndDate !== entry.lastStartDate &&
+                            ` → ${formatDate(entry.lastEndDate)}`}
                         </p>
                       )}
-                      {genres && <p>{genres}</p>}
+                      {genres && (
+                        <p className="line-clamp-1 text-ellipsis">{genres}</p>
+                      )}
                     </div>
                   </div>
                 </button>
-              )
+              );
             })}
           </div>
         ) : (
           <div className="space-y-4">
             {filteredEntries.map((entry) => {
-              const mostRecentWatch = getMostRecentWatch(entry)
+              const statusConfig = getStatusConfig(entry.entryStatus);
+              const rating = Math.round(entry.voteAverage * 10) / 10;
+
               return (
                 <button
                   key={entry._id}
                   type="button"
                   onClick={() => setEditingEntry(entry)}
-                  className="flex w-full gap-4 rounded-lg border border-zinc-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
+                  className="flex w-full gap-4 rounded-lg border border-zinc-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 cursor-pointer"
                 >
                   {entry.posterPath ? (
                     <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded">
@@ -464,14 +514,18 @@ const Home = () => {
                           <Badge variant="outline" className="text-xs">
                             {entry.mediaType === "movie" ? "Movie" : "TV Show"}
                           </Badge>
-                          <Badge className={`text-xs ${getStatusColor(mostRecentWatch?.status ?? "planned")}`}>
-                            {getStatusLabel(mostRecentWatch?.status ?? "planned")}
+                          <Badge className={statusConfig.className}>
+                            {statusConfig.label}
                           </Badge>
-                          {mostRecentWatch?.platform && (
-                            <span className="text-sm text-zinc-500">
-                              {mostRecentWatch.platform}
-                            </span>
+                          {!!entry.watches.length && (
+                            <Badge className="bg-purple-100 text-purple-800">
+                              {entry.watches.length} watch
+                              {entry.watches.length > 1 && "es"}
+                            </Badge>
                           )}
+                          <span className="text-sm text-zinc-500">
+                            {entry.lastPlatform || entry.platform}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -482,15 +536,15 @@ const Home = () => {
                       {entry.voteAverage > 0 && (
                         <span className="flex items-center gap-1">
                           <span className="text-yellow-500">★</span>
-                          TMDB: {entry.voteAverage.toFixed(1)}/10
+                          TMDB: {rating}/10
                         </span>
                       )}
-                      {mostRecentWatch?.startDate && (
+                      {entry.lastStartDate && (
                         <span>
-                          {formatDate(mostRecentWatch.startDate)}
-                          {mostRecentWatch.endDate &&
-                            mostRecentWatch.endDate !== mostRecentWatch.startDate &&
-                            ` → ${formatDate(mostRecentWatch.endDate)}`}
+                          {formatDate(entry.lastStartDate)}
+                          {entry.lastEndDate &&
+                            entry.lastEndDate !== entry.lastStartDate &&
+                            ` → ${formatDate(entry.lastEndDate)}`}
                         </span>
                       )}
                       {entry.mediaType === "movie" && entry.runtime && (
@@ -500,10 +554,14 @@ const Home = () => {
                         <span>{entry.numberOfSeasons} seasons</span>
                       )}
                     </div>
-                    {entry.genres && entry.genres.length > 0 && (
+                    {!!entry.genres?.length && (
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {entry.genres.slice(0, 3).map((genre) => (
-                          <Badge key={genre.id} variant="secondary" className="text-xs">
+                        {entry.genres.map((genre) => (
+                          <Badge
+                            key={genre.id}
+                            variant="secondary"
+                            className="text-xs"
+                          >
                             {genre.name}
                           </Badge>
                         ))}
@@ -511,7 +569,7 @@ const Home = () => {
                     )}
                   </div>
                 </button>
-              )
+              );
             })}
           </div>
         )}
@@ -525,28 +583,30 @@ const Home = () => {
         defaultListId={defaultListId}
       />
 
-      <EditEntryModal
-        open={!!editingEntry}
-        onOpenChange={(open) => !open && setEditingEntry(null)}
-        entry={editingEntry}
-        onAddWatch={(entryId, data) =>
-          addWatch(editingEntry?.listId ?? "", entryId, data)
-        }
-        onUpdateWatch={(entryId, watchId, data) =>
-          updateWatch(editingEntry?.listId ?? "", entryId, watchId, data)
-        }
-        onDeleteWatch={(entryId, watchId) =>
-          deleteWatch(editingEntry?.listId ?? "", entryId, watchId)
-        }
-        onDeleteEntry={(entryId) =>
-          deleteEntry(editingEntry?.listId ?? "", entryId)
-        }
-        onUpdateEntryPlatform={(entryId, platform) =>
-          updateEntryPlatform(editingEntry?.listId ?? "", entryId, platform)
-        }
-      />
+      {editingEntry && (
+        <EditEntryModal
+          open={!!editingEntry}
+          onOpenChange={(open) => !open && setEditingEntry(null)}
+          entry={editingEntry}
+          onAddWatch={(entryId, data) =>
+            addWatch(editingEntry?.listId ?? "", entryId, data)
+          }
+          onUpdateWatch={(entryId, watchId, data) =>
+            updateWatch(editingEntry?.listId ?? "", entryId, watchId, data)
+          }
+          onDeleteWatch={(entryId, watchId) =>
+            deleteWatch(editingEntry?.listId ?? "", entryId, watchId)
+          }
+          onDeleteEntry={(entryId) =>
+            deleteEntry(editingEntry?.listId ?? "", entryId)
+          }
+          onUpdateEntryPlatform={(entryId, platform) =>
+            updateEntryPlatform(editingEntry?.listId ?? "", entryId, platform)
+          }
+        />
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

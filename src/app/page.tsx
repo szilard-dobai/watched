@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Film, Tv, Eye, List, Popcorn, LayoutGrid, LayoutList } from "lucide-react"
+import { Plus, Film, Tv, Eye, List, Popcorn, LayoutGrid, LayoutList, Star, Calendar } from "lucide-react"
 import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,9 +26,16 @@ import type { DashboardFilterState, MediaType, EntryFormData, EntryStatus } from
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
 
-const getStatusLabel = (status: EntryStatus) => {
-  const option = ENTRY_STATUS_OPTIONS.find((opt) => opt.value === status)
-  return option?.label ?? status
+const getStatusConfig = (status: EntryStatus) => {
+  switch (status) {
+    case "finished":
+      return { label: "completed", className: "bg-green-100 text-green-800" }
+    case "in_progress":
+      return { label: "watching", className: "bg-yellow-100 text-yellow-800" }
+    case "planned":
+    default:
+      return { label: "planned", className: "bg-zinc-100 text-zinc-800" }
+  }
 }
 
 const getStatusColor = (status: EntryStatus) => {
@@ -40,6 +47,11 @@ const getStatusColor = (status: EntryStatus) => {
     case "finished":
       return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
   }
+}
+
+const getStatusLabel = (status: EntryStatus) => {
+  const option = ENTRY_STATUS_OPTIONS.find((opt) => opt.value === status)
+  return option?.label ?? status
 }
 
 const Home = () => {
@@ -331,17 +343,20 @@ const Home = () => {
             )}
           </div>
         ) : viewMode === "gallery" ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {filteredEntries.map((entry) => {
               const mostRecentWatch = getMostRecentWatch(entry)
+              const statusConfig = getStatusConfig(entry.watchStatus)
+              const rating = Math.round(entry.voteAverage * 10) / 10
+              const genres = entry.genres?.slice(0, 2).map((g) => g.name).join(", ") || ""
               return (
                 <Link
                   key={entry._id}
                   href={`/lists/${entry.listId}`}
-                  className="group overflow-hidden rounded-lg border border-zinc-200 bg-white transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
+                  className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
                 >
-                  {entry.posterPath ? (
-                    <div className="relative aspect-2/3 w-full">
+                  <div className="relative aspect-2/3 w-full bg-zinc-200 dark:bg-zinc-800">
+                    {entry.posterPath ? (
                       <Image
                         src={`${TMDB_IMAGE_BASE}${entry.posterPath}`}
                         alt={entry.title}
@@ -349,33 +364,57 @@ const Home = () => {
                         className="object-cover"
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        {entry.mediaType === "movie" ? (
+                          <Film className="h-16 w-16 text-zinc-400" strokeWidth={1} />
+                        ) : (
+                          <Tv className="h-16 w-16 text-zinc-400" strokeWidth={1} />
+                        )}
+                      </div>
+                    )}
+
+                    <div className="absolute left-3 top-3">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${statusConfig.className}`}
+                      >
+                        {statusConfig.label}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="flex aspect-2/3 w-full items-center justify-center bg-zinc-200 dark:bg-zinc-800">
-                      <span className="text-zinc-500">No poster</span>
+
+                    <div className="absolute right-3 top-3">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-zinc-800 px-2 py-1 text-xs font-medium text-white">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        {rating}
+                      </span>
                     </div>
-                  )}
-                  <div className="p-3">
-                    <h3 className="font-medium line-clamp-1" title={entry.title}>
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold line-clamp-2" title={entry.title}>
                       {entry.title}
                     </h3>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+
+                    <div className="mt-2 flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
                         {entry.mediaType === "movie" ? "Movie" : "TV"}
                       </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {entry.listName}
-                      </Badge>
-                      <Badge className={`text-xs ${getStatusColor(entry.watchStatus)}`}>
-                        {getStatusLabel(entry.watchStatus)}
-                      </Badge>
+                      {mostRecentWatch?.platform && (
+                        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                          {mostRecentWatch.platform}
+                        </span>
+                      )}
                     </div>
-                    {mostRecentWatch && (
-                      <p className="mt-2 text-xs text-zinc-500">
-                        {formatDate(mostRecentWatch.startDate)}
-                        {mostRecentWatch.platform && ` • ${mostRecentWatch.platform}`}
-                      </p>
-                    )}
+
+                    <div className="mt-3 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                      {mostRecentWatch && (
+                        <p className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {formatDate(mostRecentWatch.startDate)}
+                        </p>
+                      )}
+                      {genres && <p>{genres}</p>}
+                    </div>
                   </div>
                 </Link>
               )

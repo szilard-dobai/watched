@@ -14,17 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries";
 import { useLists } from "@/hooks/use-lists";
 import { entryApi } from "@/lib/api/fetchers";
 import { useSession } from "@/lib/auth-client";
 import { MEDIA_TYPE_OPTIONS, PLATFORMS } from "@/lib/constants";
-import type {
-  DashboardFilterState,
-  EntryFormData,
-  EntryStatus,
-  MediaType,
-} from "@/types";
+import type { DashboardFilterState, EntryFormData, MediaType } from "@/types";
 import {
   Calendar,
   Eye,
@@ -41,18 +37,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
-
-const getStatusConfig = (status: EntryStatus) => {
-  switch (status) {
-    case "finished":
-      return { label: "Finished", className: "bg-green-100 text-green-800" };
-    case "in_progress":
-      return { label: "Watching", className: "bg-yellow-100 text-yellow-800" };
-    case "planned":
-    default:
-      return { label: "Planned", className: "bg-zinc-100 text-zinc-800" };
-  }
-};
 
 const Home = () => {
   const { data: session } = useSession();
@@ -365,7 +349,6 @@ const Home = () => {
         ) : viewMode === "gallery" ? (
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {filteredEntries.map((entry) => {
-              const statusConfig = getStatusConfig(entry.entryStatus);
               const rating = Math.round(entry.voteAverage * 10) / 10;
               const genres = entry.genres?.map((g) => g.name).join(", ") || "";
               return (
@@ -401,11 +384,7 @@ const Home = () => {
                     )}
 
                     <div className="absolute left-3 top-3">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${statusConfig.className}`}
-                      >
-                        {statusConfig.label}
-                      </span>
+                      <StatusBadge status={entry.entryStatus} />
                     </div>
 
                     <div className="absolute right-3 top-3">
@@ -464,7 +443,6 @@ const Home = () => {
         ) : (
           <div className="space-y-4">
             {filteredEntries.map((entry) => {
-              const statusConfig = getStatusConfig(entry.entryStatus);
               const rating = Math.round(entry.voteAverage * 10) / 10;
 
               return (
@@ -497,9 +475,7 @@ const Home = () => {
                           <Badge variant="outline" className="text-xs">
                             {entry.mediaType === "movie" ? "Movie" : "TV Show"}
                           </Badge>
-                          <Badge className={statusConfig.className}>
-                            {statusConfig.label}
-                          </Badge>
+                          <StatusBadge status={entry.entryStatus} />
                           {!!entry.watches.length && (
                             <Badge className="bg-purple-100 text-purple-800">
                               {entry.watches.length} watch

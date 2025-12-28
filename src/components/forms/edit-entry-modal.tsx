@@ -23,6 +23,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { PLATFORMS, WATCH_STATUS_OPTIONS } from "@/lib/constants";
 import type { Entry, WatchStatus, Watch } from "@/types";
 
@@ -40,7 +41,10 @@ interface EditEntryModalProps {
   ) => Promise<boolean>;
   onDeleteWatch: (entryId: string, watchId: string) => Promise<boolean>;
   onDeleteEntry: (entryId: string) => Promise<boolean>;
-  onUpdateEntryPlatform: (entryId: string, platform: string) => Promise<boolean>;
+  onUpdateEntryPlatform: (
+    entryId: string,
+    platform: string
+  ) => Promise<boolean>;
 }
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
@@ -300,9 +304,7 @@ export const EditEntryModal = ({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Entry</DialogTitle>
-          <DialogDescription>
-            Update status and manage watch history
-          </DialogDescription>
+          <DialogDescription>Manage watch history</DialogDescription>
         </DialogHeader>
 
         {error && (
@@ -369,7 +371,8 @@ export const EditEntryModal = ({
                 </SelectContent>
               </Select>
               <p className="text-sm text-zinc-500">
-                Where you plan to watch this {entry.mediaType === "movie" ? "movie" : "show"}
+                Where you plan to watch this{" "}
+                {entry.mediaType === "movie" ? "movie" : "show"}
               </p>
             </div>
           )}
@@ -382,7 +385,11 @@ export const EditEntryModal = ({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (!showAddWatch && entry.watches.length === 0 && entry.platform) {
+                  if (
+                    !showAddWatch &&
+                    entry.watches.length === 0 &&
+                    entry.platform
+                  ) {
                     setNewWatchPlatform(entry.platform);
                   }
                   setShowAddWatch(!showAddWatch);
@@ -625,23 +632,22 @@ export const EditEntryModal = ({
                       className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-800"
                     >
                       <div className="flex items-center gap-2 text-sm">
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {watch.status === "in_progress"
-                            ? "In Progress"
-                            : watch.status}
-                        </Badge>
+                        <StatusBadge status={watch.status} />
                         {watch.startDate && (
-                          <span>{formatDate(watch.startDate)}</span>
-                        )}
-                        {watch.endDate && watch.endDate !== watch.startDate && (
-                          <span> → {formatDate(watch.endDate)}</span>
+                          <span>
+                            {formatDate(watch.startDate)}
+                            {watch.endDate &&
+                              watch.endDate !== watch.startDate && (
+                                <> → {formatDate(watch.endDate)}</>
+                              )}
+                          </span>
                         )}
                         {!watch.startDate && !watch.endDate && (
                           <span className="text-zinc-500">No date</span>
                         )}
                         {watch.platform && (
                           <span className="ml-2 text-zinc-500">
-                            • {watch.platform}
+                            {watch.platform}
                           </span>
                         )}
                       </div>

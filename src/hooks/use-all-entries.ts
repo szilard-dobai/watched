@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query-keys"
 import { entryApi } from "@/lib/api/fetchers"
-import type { Entry, WatchFormData } from "@/types"
+import type { Entry, UserRatingValue, WatchFormData } from "@/types"
 
 export interface EntryWithList extends Entry {
   listName: string
@@ -117,6 +117,25 @@ export const useAllEntries = () => {
     },
   })
 
+  const updateRatingMutation = useMutation({
+    mutationFn: ({
+      listId,
+      entryId,
+      rating,
+    }: {
+      listId: string
+      entryId: string
+      rating: UserRatingValue | null
+    }) => entryApi.updateRating(listId, entryId, rating),
+    onSuccess: (updatedEntry, { entryId }) => {
+      queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
+        old?.map((e) =>
+          e._id === entryId ? { ...e, userRatings: updatedEntry.userRatings } : e
+        ) ?? []
+      )
+    },
+  })
+
   const addWatch = async (
     listId: string,
     entryId: string,
@@ -182,6 +201,19 @@ export const useAllEntries = () => {
     }
   }
 
+  const updateRating = async (
+    listId: string,
+    entryId: string,
+    rating: UserRatingValue | null
+  ): Promise<boolean> => {
+    try {
+      await updateRatingMutation.mutateAsync({ listId, entryId, rating })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   return {
     entries,
     isLoading,
@@ -192,5 +224,6 @@ export const useAllEntries = () => {
     deleteWatch,
     deleteEntry,
     updateEntryPlatform,
+    updateRating,
   }
 }

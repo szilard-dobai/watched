@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RatingInput, RATING_CONFIG } from "@/components/ui/rating-input";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ import type {
   TMDBMovieDetails,
   TMDBSearchResult,
   TMDBTVDetails,
+  UserRatingValue,
 } from "@/types";
 import { format } from "date-fns";
 import Image from "next/image";
@@ -60,9 +62,10 @@ export const AddEntryModal = ({
   const [platform, setPlatform] = useState("");
   const [watchStatus, setWatchStatus] = useState<EntryStatus>("planned");
   const [notes, setNotes] = useState("");
+  const [rating, setRating] = useState<UserRatingValue | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  console.log({ selectedListId });
+
   const {
     details,
     isLoading: isLoadingDetails,
@@ -85,6 +88,7 @@ export const AddEntryModal = ({
     setPlatform("");
     setWatchStatus("planned");
     setNotes("");
+    setRating(null);
     setError("");
   }, [defaultListId, lists]);
 
@@ -155,6 +159,7 @@ export const AddEntryModal = ({
           : undefined,
         platform: platform || undefined,
         notes: notes || undefined,
+        rating: rating || undefined,
       };
 
       let formData: EntryFormData;
@@ -401,6 +406,18 @@ export const AddEntryModal = ({
                   rows={2}
                   placeholder="Any thoughts or notes..."
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your Rating</label>
+                <div className="flex items-center gap-3">
+                  <RatingInput value={rating} onChange={setRating} />
+                  {rating && (
+                    <span className="text-sm text-zinc-500">
+                      {RATING_CONFIG[rating].label}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

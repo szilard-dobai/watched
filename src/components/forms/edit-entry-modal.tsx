@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RatingInput, RATING_CONFIG } from "@/components/ui/rating-input";
 import {
   Select,
   SelectContent,
@@ -21,11 +22,11 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, WATCH_STATUS_OPTIONS } from "@/lib/constants";
-import type { Entry, Watch, WatchStatus } from "@/types";
+import type { Entry, UserRatingValue, Watch, WatchStatus } from "@/types";
 import { format } from "date-fns";
 import { Film, Pencil, Plus, Star, Trash2, Tv } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { WatchFormData } from "@/types";
 
@@ -33,6 +34,7 @@ interface EditEntryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entry: Entry | null;
+  currentUserId: string;
   onAddWatch: (entryId: string, data: WatchFormData) => Promise<boolean>;
   onUpdateWatch: (
     entryId: string,
@@ -45,6 +47,10 @@ interface EditEntryModalProps {
     entryId: string,
     platform: string
   ) => Promise<boolean>;
+  onUpdateRating: (
+    entryId: string,
+    rating: UserRatingValue | null
+  ) => Promise<boolean>;
 }
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
@@ -53,11 +59,13 @@ export const EditEntryModal = ({
   open,
   onOpenChange,
   entry,
+  currentUserId,
   onAddWatch,
   onUpdateWatch,
   onDeleteWatch,
   onDeleteEntry,
   onUpdateEntryPlatform,
+  onUpdateRating,
 }: EditEntryModalProps) => {
   const [showAddWatch, setShowAddWatch] = useState(false);
   const [newWatchStatus, setNewWatchStatus] = useState<WatchStatus>("finished");
@@ -87,8 +95,14 @@ export const EditEntryModal = ({
   const [error, setError] = useState("");
   const [entryPlatform, setEntryPlatform] = useState(entry?.platform ?? "");
   const [isUpdatingPlatform, setIsUpdatingPlatform] = useState(false);
+  const [isUpdatingRating, setIsUpdatingRating] = useState(false);
+
+  const addWatchButtonRef = useRef<HTMLButtonElement>(null);
 
   const isMovie = entry?.mediaType === "movie";
+  const currentUserRating = entry?.userRatings?.find(
+    (r) => r.userId === currentUserId
+  )?.rating;
 
   const isNewWatchFormValid = () => {
     if (newWatchStatus === "in_progress") return !!newWatchStartDate;
@@ -266,6 +280,20 @@ export const EditEntryModal = ({
     setIsUpdatingPlatform(false);
   };
 
+  const handleUpdateRating = async (rating: UserRatingValue | null) => {
+    if (!entry) return;
+
+    setIsUpdatingRating(true);
+    setError("");
+
+    const success = await onUpdateRating(entry._id, rating);
+    if (!success) {
+      setError("Failed to update rating");
+    }
+
+    setIsUpdatingRating(false);
+  };
+
   const handleDeleteEntry = async () => {
     if (!entry) return;
     if (!confirm("Are you sure you want to delete this entry?")) return;
@@ -296,7 +324,13 @@ export const EditEntryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[calc(100%-2rem)] lg:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-[calc(100%-2rem)] lg:max-w-4xl max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          addWatchButtonRef.current?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Edit Entry</DialogTitle>
           <DialogDescription>Manage watch history</DialogDescription>
@@ -387,10 +421,27 @@ export const EditEntryModal = ({
             </div>
           )}
 
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Your Rating</label>
+            <div className="flex items-center gap-3">
+              <RatingInput
+                value={currentUserRating}
+                onChange={handleUpdateRating}
+                readonly={isUpdatingRating}
+              />
+              {currentUserRating && (
+                <span className="text-sm text-zinc-500">
+                  {RATING_CONFIG[currentUserRating].label}
+                </span>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">Watch History</label>
               <Button
+                ref={addWatchButtonRef}
                 type="button"
                 variant="outline"
                 size="sm"

@@ -2,6 +2,13 @@ export type MediaType = "movie" | "tv";
 export type ListRole = "owner" | "member";
 export type WatchStatus = "in_progress" | "finished";
 export type EntryStatus = "planned" | WatchStatus;
+export type UserRatingValue = "disliked" | "liked" | "loved";
+
+export interface UserRating {
+  userId: string;
+  rating: UserRatingValue;
+  ratedAt: string;
+}
 
 export interface TMDBSearchResult {
   id: number;
@@ -109,6 +116,7 @@ export interface Entry {
   networks?: Network[];
   platform?: string;
   watches: Watch[];
+  userRatings?: UserRating[];
   entryStatus: EntryStatus;
   firstStartDate: string | null;
   firstEndDate: string | null;
@@ -143,6 +151,7 @@ interface EntryFormDataBase {
   networks?: Network[];
   platform?: string;
   notes?: string;
+  rating?: UserRatingValue;
 }
 
 interface EntryFormDataPlanned extends EntryFormDataBase {
@@ -300,6 +309,7 @@ export interface DbEntry extends EntryMeta {
   addedByUserId: string;
   platform?: string;
   watches: DbWatch[];
+  userRatings?: UserRating[];
   createdAt: string;
   updatedAt: string;
 }

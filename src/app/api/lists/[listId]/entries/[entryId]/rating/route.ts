@@ -1,29 +1,85 @@
 import { NextResponse } from "next/server"
+import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
-import {
-  getMembershipsCollection,
-  getEntriesCollection,
-  getListsCollection,
-} from "@/lib/db/collections"
+import { checkListAccess } from "@/lib/api/list-helpers"
+import { getEntriesCollection } from "@/lib/db/collections"
+import type { UserRatingValue } from "@/types"
 
-export const GET = async () => {
+interface RouteParams {
+  params: Promise<{ listId: string; entryId: string }>
+}
+
+interface RatingBody {
+  rating: UserRatingValue | null
+}
+
+export const PUT = async (request: Request, { params }: RouteParams) => {
   try {
     const session = await requireAuth()
+    const { listId, entryId } = await params
+
+    const role = await checkListAccess(listId, session.user.id)
+    if (!role) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 })
+    }
+
+    const { rating }: RatingBody = await request.json()
+
+    const entries = await getEntriesCollection()
+    const entry = await entries.findOne({
+      _id: new ObjectId(entryId),
+      listId: new ObjectId(listId),
+    })
+
+    if (!entry) {
+      return NextResponse.json({ error: "Entry not found" }, { status: 404 })
+    }
+
+    const now = new Date().toISOString()
     const userId = session.user.id
 
-    const memberships = await getMembershipsCollection()
-    const entries = await getEntriesCollection()
-    const lists = await getListsCollection()
+    if (rating === null) {
+      await entries.updateOne(
+        { _id: new ObjectId(entryId) },
+        {
+          $pull: { userRatings: { userId } },
+          $set: { updatedAt: now },
+        }
+      )
+    } else {
+      const existingRating = entry.userRatings?.find((r) => r.userId === userId)
 
-    const userMemberships = await memberships.find({ userId }).toArray()
-    const listIds = userMemberships.map((m) => m.listId)
+      if (existingRating) {
+        await entries.updateOne(
+          { _id: new ObjectId(entryId), "userRatings.userId": userId },
+          {
+            $set: {
+              "userRatings.$.rating": rating,
+              "userRatings.$.ratedAt": now,
+              updatedAt: now,
+            },
+          }
+        )
+      } else {
+        await entries.updateOne(
+          { _id: new ObjectId(entryId) },
+          {
+            $push: {
+              userRatings: {
+                userId,
+                rating,
+                ratedAt: now,
+              },
+            },
+            $set: { updatedAt: now },
+          }
+        )
+      }
+    }
 
-    const userLists = await lists.find({ _id: { $in: listIds } }).toArray()
-    const listMap = new Map(userLists.map((l) => [l._id.toString(), l.name]))
-
-    const allEntries = await entries
+    const result = await entries
       .aggregate([
-        { $match: { listId: { $in: listIds } } },
+        { $match: { _id: new ObjectId(entryId) } },
         {
           $lookup: {
             from: "media",
@@ -86,39 +142,7 @@ export const GET = async () => {
       ])
       .toArray()
 
-    const entriesWithListInfo = allEntries.map((entry) => {
-      const entryData = entry as {
-        listId: string
-        watches?: { addedAt: string }[]
-        createdAt: string
-      }
-      return {
-        ...entry,
-        listName: listMap.get(entryData.listId) ?? "Unknown List",
-      }
-    })
-
-    entriesWithListInfo.sort((a, b) => {
-      const aEntry = a as unknown as {
-        watches?: { addedAt: string }[]
-        createdAt: string
-      }
-      const bEntry = b as unknown as {
-        watches?: { addedAt: string }[]
-        createdAt: string
-      }
-      const aWatches = aEntry.watches ?? []
-      const bWatches = bEntry.watches ?? []
-      const aLatestWatch = aWatches.length
-        ? Math.max(...aWatches.map((w) => new Date(w.addedAt).getTime()))
-        : new Date(aEntry.createdAt).getTime()
-      const bLatestWatch = bWatches.length
-        ? Math.max(...bWatches.map((w) => new Date(w.addedAt).getTime()))
-        : new Date(bEntry.createdAt).getTime()
-      return bLatestWatch - aLatestWatch
-    })
-
-    return NextResponse.json(entriesWithListInfo)
+    return NextResponse.json(result[0])
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

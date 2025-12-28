@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RatingInput } from "@/components/ui/rating-input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries";
 import { useLists } from "@/hooks/use-lists";
@@ -49,6 +50,7 @@ const Home = () => {
     deleteWatch,
     deleteEntry,
     updateEntryPlatform,
+    updateRating,
   } = useAllEntries();
   const { lists, isLoading: isListsLoading } = useLists();
 
@@ -351,6 +353,9 @@ const Home = () => {
             {filteredEntries.map((entry) => {
               const rating = Math.round(entry.voteAverage * 10) / 10;
               const genres = entry.genres?.map((g) => g.name).join(", ") || "";
+              const userRating = entry.userRatings?.find(
+                (r) => r.userId === session.user.id
+              )?.rating;
               return (
                 <button
                   key={entry._id}
@@ -394,6 +399,12 @@ const Home = () => {
                       </span>
                     </div>
 
+                    {userRating && (
+                      <div className="absolute left-3 bottom-3">
+                        <RatingInput value={userRating} size="sm" readonly />
+                      </div>
+                    )}
+
                     {!!entry.watches.length && (
                       <div className="absolute right-3 bottom-3">
                         <span className="rounded-full px-3 py-1 text-xs font-medium bg-purple-100 text-purple-800">
@@ -416,7 +427,7 @@ const Home = () => {
                       <Badge variant="outline" className="text-xs">
                         {entry.mediaType === "movie" ? "Movie" : "TV"}
                       </Badge>
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
                         {entry.lastPlatform || entry.platform}
                       </span>
                     </div>
@@ -444,6 +455,9 @@ const Home = () => {
           <div className="space-y-4">
             {filteredEntries.map((entry) => {
               const rating = Math.round(entry.voteAverage * 10) / 10;
+              const userRating = entry.userRatings?.find(
+                (r) => r.userId === session.user.id
+              )?.rating;
 
               return (
                 <button
@@ -485,6 +499,9 @@ const Home = () => {
                           <span className="text-sm text-zinc-500">
                             {entry.lastPlatform || entry.platform}
                           </span>
+                          {userRating && (
+                            <RatingInput value={userRating} size="sm" readonly />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -547,6 +564,7 @@ const Home = () => {
           open={!!editingEntry}
           onOpenChange={(open) => !open && setEditingEntry(null)}
           entry={editingEntry}
+          currentUserId={session.user.id}
           onAddWatch={(entryId, data) =>
             addWatch(editingEntry?.listId ?? "", entryId, data)
           }
@@ -561,6 +579,9 @@ const Home = () => {
           }
           onUpdateEntryPlatform={(entryId, platform) =>
             updateEntryPlatform(editingEntry?.listId ?? "", entryId, platform)
+          }
+          onUpdateRating={(entryId, rating) =>
+            updateRating(editingEntry?.listId ?? "", entryId, rating)
           }
         />
       )}

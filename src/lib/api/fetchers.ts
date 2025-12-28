@@ -7,6 +7,7 @@ import type {
   TMDBTVDetails,
   ListRole,
   WatchFormData,
+  UserRatingValue,
 } from "@/types"
 import type { EntryWithList } from "@/hooks/use-all-entries"
 
@@ -136,6 +137,17 @@ export const entryApi = {
         body: JSON.stringify(watchData),
       }
     ),
+
+  updateRating: (
+    listId: string,
+    entryId: string,
+    rating: UserRatingValue | null
+  ) =>
+    fetchJson<Entry>(`/api/lists/${listId}/entries/${entryId}/rating`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating }),
+    }),
 }
 
 export const tmdbApi = {

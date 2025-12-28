@@ -51,6 +51,7 @@ export const GET = async (_request: Request, { params }: RouteParams) => {
             mediaId: { $toString: "$mediaId" },
             addedByUserId: 1,
             watches: 1,
+            userRatings: 1,
             entryStatus: 1,
             firstStartDate: 1,
             firstEndDate: 1,
@@ -211,6 +212,7 @@ export const POST = async (request: Request, { params }: RouteParams) => {
           networks: mediaDoc.networks,
           platform: existingEntry.platform,
           watches: updatedWatches,
+          userRatings: existingEntry.userRatings,
           ...meta,
           createdAt: existingEntry.createdAt,
           updatedAt: now,
@@ -222,6 +224,9 @@ export const POST = async (request: Request, { params }: RouteParams) => {
     const entryId = new ObjectId()
     const watches: DbWatch[] = newWatch ? [newWatch] : []
     const meta = computeEntryMeta(watches)
+    const userRatings = data.rating
+      ? [{ userId: session.user.id, rating: data.rating, ratedAt: now }]
+      : []
 
     const entry = {
       _id: entryId,
@@ -230,6 +235,7 @@ export const POST = async (request: Request, { params }: RouteParams) => {
       addedByUserId: session.user.id,
       platform: isPlanned ? data.platform : undefined,
       watches,
+      userRatings,
       ...meta,
       createdAt: now,
       updatedAt: now,
@@ -266,6 +272,7 @@ export const POST = async (request: Request, { params }: RouteParams) => {
         networks: mediaDoc.networks,
         platform: isPlanned ? data.platform : undefined,
         watches,
+        userRatings,
         ...meta,
         createdAt: now,
         updatedAt: now,

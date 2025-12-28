@@ -130,24 +130,18 @@ const Home = () => {
   const stats = useMemo(() => {
     const totalMovies = entries.filter((e) => e.mediaType === "movie").length;
     const totalTvShows = entries.filter((e) => e.mediaType === "tv").length;
-    const totalWatches = entries.reduce(
-      (sum, e) => sum + (e.watches?.length ?? 0),
-      0
-    );
-    const ratings = entries
-      .filter((e) => e.voteAverage > 0)
-      .map((e) => e.voteAverage);
-    const averageRating =
-      ratings.length > 0
-        ? ratings.reduce((a, b) => a + b, 0) / ratings.length
-        : null;
+    const planned = entries.filter((e) => e.entryStatus === "planned").length;
+    const watching = entries.filter(
+      (e) => e.entryStatus === "in_progress"
+    ).length;
+    const finished = entries.filter((e) => e.entryStatus === "finished").length;
 
     return {
       totalMovies,
       totalTvShows,
-      totalWatches,
-      totalEntries: entries.length,
-      averageRating,
+      planned,
+      watching,
+      finished,
     };
   }, [entries]);
 
@@ -288,7 +282,7 @@ const Home = () => {
       </Header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-6 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900">
@@ -313,27 +307,34 @@ const Home = () => {
           </Card>
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
-              <div className="rounded-full bg-green-100 p-2 dark:bg-green-900">
-                <Eye className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="rounded-full bg-zinc-100 p-2 dark:bg-zinc-800">
+                <Calendar className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.totalWatches}</p>
-                <p className="text-sm text-zinc-500">Total Watches</p>
+                <p className="text-2xl font-bold">{stats.planned}</p>
+                <p className="text-sm text-zinc-500">Planned</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-full bg-yellow-100 p-2 dark:bg-yellow-900">
-                <span className="flex h-5 w-5 items-center justify-center text-yellow-600 dark:text-yellow-400">
-                  ★
-                </span>
+                <Eye className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">
-                  {stats.averageRating ? stats.averageRating.toFixed(1) : "—"}
-                </p>
-                <p className="text-sm text-zinc-500">Avg TMDB Rating</p>
+                <p className="text-2xl font-bold">{stats.watching}</p>
+                <p className="text-sm text-zinc-500">Watching</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-full bg-green-100 p-2 dark:bg-green-900">
+                <Star className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.finished}</p>
+                <p className="text-sm text-zinc-500">Finished</p>
               </div>
             </CardContent>
           </Card>

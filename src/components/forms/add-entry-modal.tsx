@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ export const AddEntryModal = ({
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-
+  console.log({ selectedListId });
   const {
     details,
     isLoading: isLoadingDetails,
@@ -71,28 +71,12 @@ export const AddEntryModal = ({
     selectedResult?.id ?? null
   );
 
-  useEffect(() => {
-    if (detailsError) {
-      setError("Failed to load details");
-      setSelectedResult(null);
-    }
-  }, [detailsError]);
-
-  useEffect(() => {
-    if (watchStatus === "planned") {
-      setStartDate(undefined);
-      setEndDate(undefined);
-    } else if (watchStatus === "in_progress") {
-      setEndDate(undefined);
-    }
-  }, [watchStatus]);
-
   const handleSelect = (result: TMDBSearchResult) => {
     setSelectedResult(result);
     setError("");
   };
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setSelectedResult(null);
     setSelectedListId(defaultListId ?? lists[0]?._id ?? "");
     setStartDate(undefined);
@@ -101,10 +85,9 @@ export const AddEntryModal = ({
     setWatchStatus("planned");
     setNotes("");
     setError("");
-  };
+  }, [defaultListId, lists]);
 
   const handleClose = () => {
-    handleClear();
     onOpenChange(false);
   };
 
@@ -123,10 +106,7 @@ export const AddEntryModal = ({
   };
 
   const dateError =
-    watchStatus === "finished" &&
-    startDate &&
-    endDate &&
-    endDate < startDate
+    watchStatus === "finished" && startDate && endDate && endDate < startDate
       ? "End date must be on or after start date"
       : "";
 
@@ -206,6 +186,28 @@ export const AddEntryModal = ({
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (detailsError) {
+      setError("Failed to load details");
+      setSelectedResult(null);
+    }
+  }, [detailsError]);
+
+  useEffect(() => {
+    if (watchStatus === "planned") {
+      setStartDate(undefined);
+      setEndDate(undefined);
+    } else if (watchStatus === "in_progress") {
+      setEndDate(undefined);
+    }
+  }, [watchStatus]);
+
+  useEffect(() => {
+    if (open) {
+      handleClear();
+    }
+  }, [open, handleClear]);
 
   const isMovie = selectedResult?.media_type === "movie";
   const movieDetails = details as TMDBMovieDetails | null;
@@ -335,7 +337,9 @@ export const AddEntryModal = ({
                 <div className="space-y-2">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Start Date *</label>
+                      <label className="text-sm font-medium">
+                        Start Date *
+                      </label>
                       <DatePicker
                         date={startDate}
                         onDateChange={setStartDate}

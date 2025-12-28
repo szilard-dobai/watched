@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
-import { format } from "date-fns";
+import { TMDBSearch } from "@/components/forms/tmdb-search";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -19,19 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
-import { TMDBSearch } from "@/components/forms/tmdb-search";
 import { useTmdbDetails } from "@/hooks/use-tmdb-details";
-import { PLATFORMS, ENTRY_STATUS_OPTIONS } from "@/lib/constants";
+import { ENTRY_STATUS_OPTIONS, PLATFORMS } from "@/lib/constants";
 import type {
-  TMDBSearchResult,
-  TMDBMovieDetails,
-  TMDBTVDetails,
   EntryFormData,
-  ListWithRole,
   EntryStatus,
+  ListWithRole,
+  TMDBMovieDetails,
+  TMDBSearchResult,
+  TMDBTVDetails,
 } from "@/types";
+import { format } from "date-fns";
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import { Badge } from "../ui/badge";
 
 interface AddEntryModalProps {
   open: boolean;
@@ -215,7 +216,7 @@ export const AddEntryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-[calc(100%-2rem)] lg:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Entry</DialogTitle>
           <DialogDescription>
@@ -266,17 +267,18 @@ export const AddEntryModal = ({
                     </p>
                   ) : details ? (
                     <>
-                      <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                         {details.overview}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {details.genres.slice(0, 3).map((genre) => (
-                          <span
+                        {details.genres.map((genre) => (
+                          <Badge
                             key={genre.id}
-                            className="rounded bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-800"
+                            variant="secondary"
+                            className="text-xs"
                           >
                             {genre.name}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </>

@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import { format } from "date-fns";
-import { Plus, Trash2, Film, Tv, Star, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { PLATFORMS, WATCH_STATUS_OPTIONS } from "@/lib/constants";
-import type { Entry, WatchStatus, Watch } from "@/types";
+import type { Entry, Watch, WatchStatus } from "@/types";
+import { format } from "date-fns";
+import { Film, Pencil, Plus, Star, Trash2, Tv } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 
 import type { WatchFormData } from "@/types";
 
@@ -293,15 +293,10 @@ export const EditEntryModal = ({
   if (!entry) return null;
 
   const rating = Math.round(entry.voteAverage * 10) / 10;
-  const genres =
-    entry.genres
-      ?.slice(0, 3)
-      .map((g) => g.name)
-      .join(", ") || "";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100%-2rem)] lg:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Entry</DialogTitle>
           <DialogDescription>Manage watch history</DialogDescription>
@@ -347,7 +342,22 @@ export const EditEntryModal = ({
                   </span>
                 )}
               </div>
-              {genres && <p className="mt-1 text-sm text-zinc-500">{genres}</p>}
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {entry.overview}
+              </p>
+              {!!entry.genres.length && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {entry.genres.map((genre) => (
+                    <Badge
+                      key={genre.id}
+                      variant="secondary"
+                      className="text-xs"
+                    >
+                      {genre.name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

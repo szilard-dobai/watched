@@ -12,6 +12,9 @@ export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
 
   const handleSignOut = async () => {
+    localStorage.removeItem("dashboard-view-mode")
+    localStorage.removeItem("dashboard-filters")
+    localStorage.removeItem("dashboard-sort")
     await signOut()
     router.push("/login")
     router.refresh()

@@ -5,6 +5,7 @@ import { EditEntryModal } from "@/components/forms/edit-entry-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { FilterModal } from "@/components/ui/filter-modal";
 import Header from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,18 +43,36 @@ import {
   Calendar,
   Eye,
   Film,
+  Filter,
   LayoutGrid,
   LayoutList,
   List,
   Plus,
+  RotateCcw,
   Star,
   Tv,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
+
+const DEFAULT_FILTERS: DashboardFilterState = {
+  search: "",
+  listId: "all",
+  mediaType: "all",
+  genre: "all",
+  platform: "all",
+  status: "all",
+  userRating: "all",
+};
+
+const DEFAULT_SORT: DashboardSortState = {
+  field: "date",
+  direction: "desc",
+};
 
 const Home = () => {
   const { data: session } = useSession();
@@ -71,28 +90,53 @@ const Home = () => {
   const { lists, isLoading: isListsLoading } = useLists();
 
   const [isAddEntryOpen, setIsAddEntryOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const [viewMode, setViewMode] = useLocalStorage<"gallery" | "list">(
+    "dashboard-view-mode",
+    "gallery"
+  );
 
   const editingEntry = useMemo(
     () => entries.find((e) => e._id === editingEntryId) ?? null,
     [entries, editingEntryId]
   );
 
-  const [filters, setFilters] = useState<DashboardFilterState>({
-    search: "",
-    listId: "all",
-    mediaType: "all",
-    genre: "all",
-    platform: "all",
-    status: "all",
-    userRating: "all",
-  });
+  const [filters, setFilters] = useLocalStorage<DashboardFilterState>(
+    "dashboard-filters",
+    DEFAULT_FILTERS
+  );
 
-  const [sort, setSort] = useState<DashboardSortState>({
-    field: "date",
-    direction: "desc",
-  });
+  const [sort, setSort] = useLocalStorage<DashboardSortState>(
+    "dashboard-sort",
+    DEFAULT_SORT
+  );
+
+  const handleResetFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setSort(DEFAULT_SORT);
+  };
+
+  const hasActiveFilters =
+    filters.search !== "" ||
+    filters.listId !== "all" ||
+    filters.mediaType !== "all" ||
+    filters.genre !== "all" ||
+    filters.platform !== "all" ||
+    filters.status !== "all" ||
+    filters.userRating !== "all" ||
+    sort.field !== "date" ||
+    sort.direction !== "desc";
+
+  const activeFilterCount = [
+    filters.search !== "",
+    filters.listId !== "all",
+    filters.mediaType !== "all",
+    filters.genre !== "all",
+    filters.platform !== "all",
+    filters.status !== "all",
+    filters.userRating !== "all",
+  ].filter(Boolean).length;
 
   const allGenres = useMemo(() => {
     const genreSet = new Set<string>();
@@ -314,7 +358,49 @@ const Home = () => {
           </Card>
         </div>
 
-        <div className="mb-6 space-y-3">
+        <div className="mb-6 flex items-center gap-3 md:hidden">
+          <Input
+            placeholder="Search titles..."
+            value={filters.search}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, search: e.target.value }))
+            }
+            className="flex-1"
+          />
+          <Button
+            variant="outline"
+            onClick={() => setIsFilterModalOpen(true)}
+            className="relative"
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant={viewMode === "gallery" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("gallery")}
+              title="Gallery view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+              title="List view"
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-6 hidden space-y-3 md:block">
           <div className="flex flex-wrap items-center gap-3">
             <Input
               placeholder="Search titles..."
@@ -322,7 +408,7 @@ const Home = () => {
               onChange={(e) =>
                 setFilters((f) => ({ ...f, search: e.target.value }))
               }
-              className="w-full sm:w-64"
+              className="w-64"
             />
             <Select
               value={filters.listId}
@@ -494,6 +580,18 @@ const Home = () => {
                   <ArrowDownAZ className="h-4 w-4" />
                 )}
               </Button>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  title="Reset filters and sorting"
+                  className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  <RotateCcw className="mr-1 h-4 w-4" />
+                  Reset
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -754,6 +852,19 @@ const Home = () => {
           }
         />
       )}
+
+      <FilterModal
+        open={isFilterModalOpen}
+        onOpenChange={setIsFilterModalOpen}
+        filters={filters}
+        setFilters={setFilters}
+        sort={sort}
+        setSort={setSort}
+        lists={lists}
+        allGenres={allGenres}
+        onReset={handleResetFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
     </div>
   );
 };

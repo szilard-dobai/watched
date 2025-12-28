@@ -322,7 +322,7 @@ export const EditEntryModal = ({
               <RatingInput
                 value={entry.userRating}
                 onChange={handleUpdateRating}
-                readonly={isUpdatingRating}
+                disabled={isUpdatingRating}
               />
               {entry.userRating && (
                 <span className="text-sm text-zinc-500">

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { RatingInput } from "@/components/ui/rating-input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { useAllEntries, type EntryWithList } from "@/hooks/use-all-entries";
+import { useAllEntries } from "@/hooks/use-all-entries";
 import { useLists } from "@/hooks/use-lists";
 import { entryApi } from "@/lib/api/fetchers";
 import { useSession } from "@/lib/auth-client";
@@ -55,8 +55,13 @@ const Home = () => {
   const { lists, isLoading: isListsLoading } = useLists();
 
   const [isAddEntryOpen, setIsAddEntryOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<EntryWithList | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+
+  const editingEntry = useMemo(
+    () => entries.find((e) => e._id === editingEntryId) ?? null,
+    [entries, editingEntryId]
+  );
 
   const [filters, setFilters] = useState<DashboardFilterState>({
     search: "",
@@ -357,7 +362,7 @@ const Home = () => {
                 <button
                   key={entry._id}
                   type="button"
-                  onClick={() => setEditingEntry(entry)}
+                  onClick={() => setEditingEntryId(entry._id)}
                   className="group overflow-hidden rounded-xl border border-zinc-200 bg-white text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 cursor-pointer"
                 >
                   <div className="relative aspect-2/3 w-full bg-zinc-200 dark:bg-zinc-800">
@@ -457,7 +462,7 @@ const Home = () => {
                 <button
                   key={entry._id}
                   type="button"
-                  onClick={() => setEditingEntry(entry)}
+                  onClick={() => setEditingEntryId(entry._id)}
                   className="flex w-full gap-4 rounded-lg border border-zinc-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 cursor-pointer"
                 >
                   {entry.posterPath ? (
@@ -556,7 +561,7 @@ const Home = () => {
       {editingEntry && (
         <EditEntryModal
           open={!!editingEntry}
-          onOpenChange={(open) => !open && setEditingEntry(null)}
+          onOpenChange={(open) => !open && setEditingEntryId(null)}
           entry={editingEntry}
           onAddWatch={(entryId, data) =>
             addWatch(editingEntry?.listId ?? "", entryId, data)

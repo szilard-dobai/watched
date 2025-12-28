@@ -9,6 +9,7 @@ interface RatingInputProps {
   onChange?: (value: UserRatingValue | null) => void
   size?: "sm" | "md" | "lg"
   readonly?: boolean
+  disabled?: boolean
   className?: string
 }
 
@@ -40,6 +41,7 @@ const RatingInput = ({
   onChange,
   size = "md",
   readonly = false,
+  disabled = false,
   className,
 }: RatingInputProps) => {
   const sizeClasses = {
@@ -49,12 +51,12 @@ const RatingInput = ({
   }
 
   const handleClick = (rating: UserRatingValue) => {
-    if (readonly || !onChange) return
+    if (readonly || disabled || !onChange) return
     onChange(value === rating ? null : rating)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent, rating: UserRatingValue) => {
-    if (readonly || !onChange) return
+    if (readonly || disabled || !onChange) return
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault()
       onChange(value === rating ? null : rating)
@@ -91,10 +93,16 @@ const RatingInput = ({
             type="button"
             onClick={() => handleClick(rating)}
             onKeyDown={(e) => handleKeyDown(e, rating)}
-            className="cursor-pointer transition-all rounded-md p-1.5 hover:scale-110 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-1"
+            disabled={disabled}
+            className={cn(
+              "transition-all rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-1",
+              disabled
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer hover:scale-110 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            )}
             aria-label={config.label}
             aria-pressed={isActive}
-            tabIndex={0}
+            tabIndex={disabled ? -1 : 0}
             title={config.label}
           >
             <Icon

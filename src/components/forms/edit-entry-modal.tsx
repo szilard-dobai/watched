@@ -1,8 +1,7 @@
-"use client";
+"use client"
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,49 +9,67 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { RatingInput, RATING_CONFIG } from "@/components/ui/rating-input";
+} from "@/components/ui/dialog"
+import { RatingInput, RATING_CONFIG } from "@/components/ui/rating-input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Textarea } from "@/components/ui/textarea";
-import { PLATFORMS, WATCH_STATUS_OPTIONS } from "@/lib/constants";
-import type { Entry, UserRatingValue, Watch, WatchStatus } from "@/types";
-import { format } from "date-fns";
-import { Film, Pencil, Plus, Star, Trash2, Tv } from "lucide-react";
-import Image from "next/image";
-import { useRef, useState } from "react";
-
-import type { WatchFormData } from "@/types";
+} from "@/components/ui/select"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { PLATFORMS } from "@/lib/constants"
+import type { Entry, UserRatingValue, Watch } from "@/types"
+import { format } from "date-fns"
+import { Film, Pencil, Plus, Star, Trash2, Tv } from "lucide-react"
+import Image from "next/image"
+import { useRef, useState } from "react"
+import { WatchForm } from "./watch-form"
+import type { WatchFormValues } from "@/lib/schemas"
+import type { WatchFormData } from "@/types"
 
 interface EditEntryModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  entry: Entry | null;
-  onAddWatch: (entryId: string, data: WatchFormData) => Promise<boolean>;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  entry: Entry | null
+  onAddWatch: (entryId: string, data: WatchFormData) => Promise<boolean>
   onUpdateWatch: (
     entryId: string,
     watchId: string,
     data: WatchFormData
-  ) => Promise<boolean>;
-  onDeleteWatch: (entryId: string, watchId: string) => Promise<boolean>;
-  onDeleteEntry: (entryId: string) => Promise<boolean>;
+  ) => Promise<boolean>
+  onDeleteWatch: (entryId: string, watchId: string) => Promise<boolean>
+  onDeleteEntry: (entryId: string) => Promise<boolean>
   onUpdateEntryPlatform: (
     entryId: string,
     platform: string
-  ) => Promise<boolean>;
+  ) => Promise<boolean>
   onUpdateRating: (
     entryId: string,
     rating: UserRatingValue | null
-  ) => Promise<boolean>;
+  ) => Promise<boolean>
 }
 
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
+
+const convertFormValuesToWatchData = (
+  values: WatchFormValues,
+  isMovie: boolean
+): WatchFormData => {
+  const finalEndDate =
+    values.status === "finished" && isMovie && !values.endDate
+      ? values.startDate
+      : values.endDate
+
+  return {
+    status: values.status,
+    startDate: values.startDate ? format(values.startDate, "yyyy-MM-dd") : undefined,
+    endDate: finalEndDate ? format(finalEndDate, "yyyy-MM-dd") : undefined,
+    platform: values.platform || undefined,
+    notes: values.notes || undefined,
+  }
+}
 
 export const EditEntryModal = ({
   open,
@@ -65,265 +82,148 @@ export const EditEntryModal = ({
   onUpdateEntryPlatform,
   onUpdateRating,
 }: EditEntryModalProps) => {
-  const [showAddWatch, setShowAddWatch] = useState(false);
-  const [newWatchStatus, setNewWatchStatus] = useState<WatchStatus>("finished");
-  const [newWatchStartDate, setNewWatchStartDate] = useState<Date | undefined>(
-    undefined
-  );
-  const [newWatchEndDate, setNewWatchEndDate] = useState<Date | undefined>(
-    undefined
-  );
-  const [newWatchPlatform, setNewWatchPlatform] = useState("");
-  const [newWatchNotes, setNewWatchNotes] = useState("");
-  const [isAddingWatch, setIsAddingWatch] = useState(false);
-  const [editingWatch, setEditingWatch] = useState<Watch | null>(null);
-  const [editWatchStatus, setEditWatchStatus] =
-    useState<WatchStatus>("finished");
-  const [editWatchStartDate, setEditWatchStartDate] = useState<
-    Date | undefined
-  >(undefined);
-  const [editWatchEndDate, setEditWatchEndDate] = useState<Date | undefined>(
-    undefined
-  );
-  const [editWatchPlatform, setEditWatchPlatform] = useState("");
-  const [editWatchNotes, setEditWatchNotes] = useState("");
-  const [isUpdatingWatch, setIsUpdatingWatch] = useState(false);
-  const [deletingWatchId, setDeletingWatchId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState("");
-  const [entryPlatform, setEntryPlatform] = useState(entry?.platform ?? "");
-  const [isUpdatingPlatform, setIsUpdatingPlatform] = useState(false);
-  const [isUpdatingRating, setIsUpdatingRating] = useState(false);
+  const [showAddWatch, setShowAddWatch] = useState(false)
+  const [isAddingWatch, setIsAddingWatch] = useState(false)
+  const [editingWatch, setEditingWatch] = useState<Watch | null>(null)
+  const [isUpdatingWatch, setIsUpdatingWatch] = useState(false)
+  const [deletingWatchId, setDeletingWatchId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [error, setError] = useState("")
+  const [entryPlatform, setEntryPlatform] = useState(entry?.platform ?? "")
+  const [isUpdatingPlatform, setIsUpdatingPlatform] = useState(false)
+  const [isUpdatingRating, setIsUpdatingRating] = useState(false)
 
-  const addWatchButtonRef = useRef<HTMLButtonElement>(null);
+  const addWatchButtonRef = useRef<HTMLButtonElement>(null)
 
-  const isMovie = entry?.mediaType === "movie";
-
-  const isNewWatchFormValid = () => {
-    if (newWatchStatus === "in_progress") return !!newWatchStartDate;
-    if (newWatchStatus === "finished") {
-      if (!newWatchStartDate) return false;
-      if (isMovie) return true;
-      if (!newWatchEndDate) return false;
-      return newWatchEndDate >= newWatchStartDate;
-    }
-    return false;
-  };
-
-  const isEditWatchFormValid = () => {
-    if (editWatchStatus === "in_progress") return !!editWatchStartDate;
-    if (editWatchStatus === "finished") {
-      if (!editWatchStartDate) return false;
-      if (isMovie) return true;
-      if (!editWatchEndDate) return false;
-      return editWatchEndDate >= editWatchStartDate;
-    }
-    return false;
-  };
-
-  const newWatchDateError =
-    newWatchStatus === "finished" &&
-    newWatchStartDate &&
-    newWatchEndDate &&
-    newWatchEndDate < newWatchStartDate
-      ? "End date must be on or after start date"
-      : "";
-
-  const editWatchDateError =
-    editWatchStatus === "finished" &&
-    editWatchStartDate &&
-    editWatchEndDate &&
-    editWatchEndDate < editWatchStartDate
-      ? "End date must be on or after start date"
-      : "";
+  const isMovie = entry?.mediaType === "movie"
 
   const handleClose = () => {
-    setShowAddWatch(false);
-    setNewWatchStatus("finished");
-    setNewWatchStartDate(undefined);
-    setNewWatchEndDate(undefined);
-    setNewWatchPlatform("");
-    setNewWatchNotes("");
-    setEditingWatch(null);
-    setEditWatchStatus("finished");
-    setEditWatchStartDate(undefined);
-    setEditWatchEndDate(undefined);
-    setEditWatchPlatform("");
-    setEditWatchNotes("");
-    setError("");
-    onOpenChange(false);
-  };
+    setShowAddWatch(false)
+    setEditingWatch(null)
+    setError("")
+    onOpenChange(false)
+  }
 
-  const handleAddWatch = async () => {
-    if (!entry) return;
+  const handleAddWatch = async (values: WatchFormValues) => {
+    if (!entry) return
 
-    setIsAddingWatch(true);
-    setError("");
+    setIsAddingWatch(true)
+    setError("")
 
-    const finalEndDate =
-      newWatchStatus === "finished" && isMovie && !newWatchEndDate
-        ? newWatchStartDate
-        : newWatchEndDate;
-
-    const success = await onAddWatch(entry._id, {
-      status: newWatchStatus,
-      startDate: newWatchStartDate
-        ? format(newWatchStartDate, "yyyy-MM-dd")
-        : undefined,
-      endDate: finalEndDate ? format(finalEndDate, "yyyy-MM-dd") : undefined,
-      platform: newWatchPlatform || undefined,
-      notes: newWatchNotes || undefined,
-    });
+    const watchData = convertFormValuesToWatchData(values, isMovie)
+    const success = await onAddWatch(entry._id, watchData)
 
     if (success) {
-      setShowAddWatch(false);
-      setNewWatchStatus("finished");
-      setNewWatchStartDate(undefined);
-      setNewWatchEndDate(undefined);
-      setNewWatchPlatform("");
-      setNewWatchNotes("");
+      setShowAddWatch(false)
     } else {
-      setError("Failed to add watch");
+      setError("Failed to add watch")
     }
 
-    setIsAddingWatch(false);
-  };
+    setIsAddingWatch(false)
+  }
 
   const handleEditWatch = (watch: Watch) => {
-    setShowAddWatch(false);
-    setEditingWatch(watch);
-    setEditWatchStatus(watch.status);
-    setEditWatchStartDate(
-      watch.startDate ? new Date(watch.startDate) : undefined
-    );
-    setEditWatchEndDate(watch.endDate ? new Date(watch.endDate) : undefined);
-    setEditWatchPlatform(watch.platform ?? "");
-    setEditWatchNotes(watch.notes ?? "");
-  };
+    setShowAddWatch(false)
+    setEditingWatch(watch)
+  }
 
-  const handleCancelEdit = () => {
-    setEditingWatch(null);
-    setEditWatchStatus("finished");
-    setEditWatchStartDate(undefined);
-    setEditWatchEndDate(undefined);
-    setEditWatchPlatform("");
-    setEditWatchNotes("");
-  };
+  const handleUpdateWatch = async (values: WatchFormValues) => {
+    if (!entry || !editingWatch) return
 
-  const handleUpdateWatch = async () => {
-    if (!entry || !editingWatch) return;
+    setIsUpdatingWatch(true)
+    setError("")
 
-    setIsUpdatingWatch(true);
-    setError("");
-
-    const finalEndDate =
-      editWatchStatus === "finished" && isMovie && !editWatchEndDate
-        ? editWatchStartDate
-        : editWatchEndDate;
-
-    const success = await onUpdateWatch(entry._id, editingWatch._id, {
-      status: editWatchStatus,
-      startDate: editWatchStartDate
-        ? format(editWatchStartDate, "yyyy-MM-dd")
-        : undefined,
-      endDate: finalEndDate ? format(finalEndDate, "yyyy-MM-dd") : undefined,
-      platform: editWatchPlatform || undefined,
-      notes: editWatchNotes || undefined,
-    });
+    const watchData = convertFormValuesToWatchData(values, isMovie)
+    const success = await onUpdateWatch(entry._id, editingWatch._id, watchData)
 
     if (success) {
-      setEditingWatch(null);
-      setEditWatchStatus("finished");
-      setEditWatchStartDate(undefined);
-      setEditWatchEndDate(undefined);
-      setEditWatchPlatform("");
-      setEditWatchNotes("");
+      setEditingWatch(null)
     } else {
-      setError("Failed to update watch");
+      setError("Failed to update watch")
     }
 
-    setIsUpdatingWatch(false);
-  };
+    setIsUpdatingWatch(false)
+  }
 
   const handleDeleteWatch = async (watchId: string) => {
-    if (!entry) return;
+    if (!entry) return
 
-    setDeletingWatchId(watchId);
-    setError("");
+    setDeletingWatchId(watchId)
+    setError("")
 
-    const success = await onDeleteWatch(entry._id, watchId);
+    const success = await onDeleteWatch(entry._id, watchId)
     if (!success) {
-      setError("Failed to delete watch");
+      setError("Failed to delete watch")
     }
 
-    setDeletingWatchId(null);
-  };
+    setDeletingWatchId(null)
+  }
 
   const handleUpdateEntryPlatform = async (platform: string) => {
-    if (!entry) return;
+    if (!entry) return
 
-    setIsUpdatingPlatform(true);
-    setError("");
-    setEntryPlatform(platform);
+    setIsUpdatingPlatform(true)
+    setError("")
+    setEntryPlatform(platform)
 
-    const success = await onUpdateEntryPlatform(entry._id, platform);
+    const success = await onUpdateEntryPlatform(entry._id, platform)
     if (!success) {
-      setError("Failed to update platform");
-      setEntryPlatform(entry.platform ?? "");
+      setError("Failed to update platform")
+      setEntryPlatform(entry.platform ?? "")
     }
 
-    setIsUpdatingPlatform(false);
-  };
+    setIsUpdatingPlatform(false)
+  }
 
   const handleUpdateRating = async (rating: UserRatingValue | null) => {
-    if (!entry) return;
+    if (!entry) return
 
-    setIsUpdatingRating(true);
-    setError("");
+    setIsUpdatingRating(true)
+    setError("")
 
-    const success = await onUpdateRating(entry._id, rating);
+    const success = await onUpdateRating(entry._id, rating)
     if (!success) {
-      setError("Failed to update rating");
+      setError("Failed to update rating")
     }
 
-    setIsUpdatingRating(false);
-  };
+    setIsUpdatingRating(false)
+  }
 
   const handleDeleteEntry = async () => {
-    if (!entry) return;
-    if (!confirm("Are you sure you want to delete this entry?")) return;
+    if (!entry) return
+    if (!confirm("Are you sure you want to delete this entry?")) return
 
-    setIsDeleting(true);
-    setError("");
+    setIsDeleting(true)
+    setError("")
 
-    const success = await onDeleteEntry(entry._id);
+    const success = await onDeleteEntry(entry._id)
     if (success) {
-      handleClose();
+      handleClose()
     } else {
-      setError("Failed to delete entry");
-      setIsDeleting(false);
+      setError("Failed to delete entry")
+      setIsDeleting(false)
     }
-  };
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    });
-  };
+    })
+  }
 
-  if (!entry) return null;
+  if (!entry) return null
 
-  const rating = Math.round(entry.voteAverage * 10) / 10;
+  const rating = Math.round(entry.voteAverage * 10) / 10
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
         className="max-w-[calc(100%-2rem)] lg:max-w-4xl max-h-[90vh] overflow-y-auto"
         onOpenAutoFocus={(e) => {
-          e.preventDefault();
-          addWatchButtonRef.current?.focus();
+          e.preventDefault()
+          addWatchButtonRef.current?.focus()
         }}
       >
         <DialogHeader>
@@ -441,14 +341,8 @@ export const EditEntryModal = ({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (
-                    !showAddWatch &&
-                    entry.watches.length === 0 &&
-                    entry.platform
-                  ) {
-                    setNewWatchPlatform(entry.platform);
-                  }
-                  setShowAddWatch(!showAddWatch);
+                  setEditingWatch(null)
+                  setShowAddWatch(!showAddWatch)
                 }}
               >
                 <Plus className="mr-1 h-3 w-3" />
@@ -458,107 +352,21 @@ export const EditEntryModal = ({
 
             {showAddWatch && (
               <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Status</label>
-                    <Select
-                      value={newWatchStatus}
-                      onValueChange={(v) => setNewWatchStatus(v as WatchStatus)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {WATCH_STATUS_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Start Date *
-                      </label>
-                      <DatePicker
-                        date={newWatchStartDate}
-                        onDateChange={setNewWatchStartDate}
-                        placeholder="Pick date"
-                      />
-                    </div>
-                    {newWatchStatus === "finished" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          End Date {isMovie ? "(optional)" : "*"}
-                        </label>
-                        <DatePicker
-                          date={newWatchEndDate}
-                          onDateChange={setNewWatchEndDate}
-                          placeholder={isMovie ? "Same as start" : "Pick date"}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  {newWatchDateError && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      {newWatchDateError}
-                    </p>
-                  )}
-                  {newWatchStatus === "finished" &&
-                    isMovie &&
-                    !newWatchEndDate && (
-                      <p className="text-sm text-zinc-500">
-                        For movies, end date defaults to start date.
-                      </p>
-                    )}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Platform</label>
-                    <Select
-                      value={newWatchPlatform}
-                      onValueChange={setNewWatchPlatform}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select platform..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PLATFORMS.map((p) => (
-                          <SelectItem key={p} value={p}>
-                            {p}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Notes</label>
-                    <Textarea
-                      value={newWatchNotes}
-                      onChange={(e) => setNewWatchNotes(e.target.value)}
-                      rows={2}
-                      placeholder="Any thoughts..."
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAddWatch(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleAddWatch}
-                      disabled={isAddingWatch || !isNewWatchFormValid()}
-                    >
-                      {isAddingWatch ? "Adding..." : "Add"}
-                    </Button>
-                  </div>
-                </div>
+                <WatchForm
+                  isMovie={isMovie}
+                  defaultValues={{
+                    status: "finished",
+                    platform:
+                      entry.watches.length === 0 && entry.platform
+                        ? entry.platform
+                        : undefined,
+                  }}
+                  onSubmit={handleAddWatch}
+                  onCancel={() => setShowAddWatch(false)}
+                  isSubmitting={isAddingWatch}
+                  submitLabel="Add"
+                  submittingLabel="Adding..."
+                />
               </div>
             )}
 
@@ -572,115 +380,25 @@ export const EditEntryModal = ({
                       key={watch._id}
                       className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
                     >
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Status</label>
-                          <Select
-                            value={editWatchStatus}
-                            onValueChange={(v) =>
-                              setEditWatchStatus(v as WatchStatus)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {WATCH_STATUS_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                              Start Date *
-                            </label>
-                            <DatePicker
-                              date={editWatchStartDate}
-                              onDateChange={setEditWatchStartDate}
-                              placeholder="Pick date"
-                            />
-                          </div>
-                          {editWatchStatus === "finished" && (
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">
-                                End Date {isMovie ? "(optional)" : "*"}
-                              </label>
-                              <DatePicker
-                                date={editWatchEndDate}
-                                onDateChange={setEditWatchEndDate}
-                                placeholder={
-                                  isMovie ? "Same as start" : "Pick date"
-                                }
-                              />
-                            </div>
-                          )}
-                        </div>
-                        {editWatchDateError && (
-                          <p className="text-sm text-red-600 dark:text-red-400">
-                            {editWatchDateError}
-                          </p>
-                        )}
-                        {editWatchStatus === "finished" &&
-                          isMovie &&
-                          !editWatchEndDate && (
-                            <p className="text-sm text-zinc-500">
-                              For movies, end date defaults to start date.
-                            </p>
-                          )}
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">
-                            Platform
-                          </label>
-                          <Select
-                            value={editWatchPlatform}
-                            onValueChange={setEditWatchPlatform}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select platform..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PLATFORMS.map((p) => (
-                                <SelectItem key={p} value={p}>
-                                  {p}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Notes</label>
-                          <Textarea
-                            value={editWatchNotes}
-                            onChange={(e) => setEditWatchNotes(e.target.value)}
-                            rows={2}
-                            placeholder="Any thoughts..."
-                          />
-                        </div>
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleCancelEdit}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={handleUpdateWatch}
-                            disabled={
-                              isUpdatingWatch || !isEditWatchFormValid()
-                            }
-                          >
-                            {isUpdatingWatch ? "Saving..." : "Save"}
-                          </Button>
-                        </div>
-                      </div>
+                      <WatchForm
+                        isMovie={isMovie}
+                        defaultValues={{
+                          status: watch.status,
+                          startDate: watch.startDate
+                            ? new Date(watch.startDate)
+                            : undefined,
+                          endDate: watch.endDate
+                            ? new Date(watch.endDate)
+                            : undefined,
+                          platform: watch.platform ?? undefined,
+                          notes: watch.notes ?? undefined,
+                        }}
+                        onSubmit={handleUpdateWatch}
+                        onCancel={() => setEditingWatch(null)}
+                        isSubmitting={isUpdatingWatch}
+                        submitLabel="Save"
+                        submittingLabel="Saving..."
+                      />
                     </div>
                   ) : (
                     <div
@@ -758,5 +476,5 @@ export const EditEntryModal = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

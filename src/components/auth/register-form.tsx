@@ -3,7 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { signUp } from "@/lib/auth-client"
+import { registerSchema, type RegisterFormData } from "@/lib/schemas"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,45 +20,37 @@ import {
 
 export const RegisterForm = () => {
   const router = useRouter()
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState("")
+  const [serverError, setServerError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  })
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters")
-      return
-    }
-
+  const onSubmit = async (data: RegisterFormData) => {
+    setServerError("")
     setIsLoading(true)
 
     try {
       const result = await signUp.email({
-        email,
-        password,
-        name,
+        email: data.email,
+        password: data.password,
+        name: data.name,
       })
 
       if (result.error) {
-        setError(result.error.message ?? "Failed to create account")
+        setServerError(result.error.message ?? "Failed to create account")
         return
       }
 
       router.push("/")
       router.refresh()
     } catch {
-      setError("An unexpected error occurred")
+      setServerError("An unexpected error occurred")
     } finally {
       setIsLoading(false)
     }
@@ -69,11 +64,11 @@ export const RegisterForm = () => {
           Sign up to start tracking your movies and TV shows
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
-          {error && (
+          {serverError && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-              {error}
+              {serverError}
             </div>
           )}
           <div className="space-y-2">
@@ -84,11 +79,14 @@ export const RegisterForm = () => {
               id="name"
               type="text"
               placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+              {...register("name")}
               disabled={isLoading}
             />
+            {errors.name && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.name.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
@@ -98,11 +96,14 @@ export const RegisterForm = () => {
               id="email"
               type="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...register("email")}
               disabled={isLoading}
             />
+            {errors.email && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.email.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
@@ -112,11 +113,14 @@ export const RegisterForm = () => {
               id="password"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              {...register("password")}
               disabled={isLoading}
             />
+            {errors.password && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.password.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium">
@@ -126,11 +130,14 @@ export const RegisterForm = () => {
               id="confirmPassword"
               type="password"
               placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
+              {...register("confirmPassword")}
               disabled={isLoading}
             />
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">

@@ -3,7 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { signIn } from "@/lib/auth-client"
+import { loginSchema, type LoginFormData } from "@/lib/schemas"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,31 +20,36 @@ import {
 
 export const LoginForm = () => {
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [serverError, setServerError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  })
+
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError("")
     setIsLoading(true)
 
     try {
       const result = await signIn.email({
-        email,
-        password,
+        email: data.email,
+        password: data.password,
       })
 
       if (result.error) {
-        setError(result.error.message ?? "Failed to sign in")
+        setServerError(result.error.message ?? "Failed to sign in")
         return
       }
 
       router.push("/")
       router.refresh()
     } catch {
-      setError("An unexpected error occurred")
+      setServerError("An unexpected error occurred")
     } finally {
       setIsLoading(false)
     }
@@ -55,11 +63,11 @@ export const LoginForm = () => {
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
-          {error && (
+          {serverError && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-              {error}
+              {serverError}
             </div>
           )}
           <div className="space-y-2">
@@ -70,11 +78,14 @@ export const LoginForm = () => {
               id="email"
               type="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...register("email")}
               disabled={isLoading}
             />
+            {errors.email && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.email.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
@@ -84,11 +95,14 @@ export const LoginForm = () => {
               id="password"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              {...register("password")}
               disabled={isLoading}
             />
+            {errors.password && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.password.message}
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">

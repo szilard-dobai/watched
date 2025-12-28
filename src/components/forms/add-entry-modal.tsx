@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { TMDBSearch } from "@/components/forms/tmdb-search";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { TMDBSearch } from "@/components/forms/tmdb-search"
+import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   Dialog,
   DialogContent,
@@ -10,18 +10,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { RatingInput, RATING_CONFIG } from "@/components/ui/rating-input";
+} from "@/components/ui/dialog"
+import { RatingInput, RATING_CONFIG } from "@/components/ui/rating-input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useTmdbDetails } from "@/hooks/use-tmdb-details";
-import { ENTRY_STATUS_OPTIONS, PLATFORMS } from "@/lib/constants";
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { useTmdbDetails } from "@/hooks/use-tmdb-details"
+import { ENTRY_STATUS_OPTIONS, PLATFORMS } from "@/lib/constants"
+import { addEntryFormSchema, type AddEntryFormValues } from "@/lib/schemas"
 import type {
   EntryFormData,
   EntryStatus,
@@ -30,21 +31,23 @@ import type {
   TMDBSearchResult,
   TMDBTVDetails,
   UserRatingValue,
-} from "@/types";
-import { format } from "date-fns";
-import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
-import { Badge } from "../ui/badge";
+} from "@/types"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { format } from "date-fns"
+import Image from "next/image"
+import { useCallback, useEffect, useState } from "react"
+import { Controller, useForm, useWatch } from "react-hook-form"
+import { Badge } from "../ui/badge"
 
 interface AddEntryModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (listId: string, data: EntryFormData) => Promise<void>;
-  lists: ListWithRole[];
-  defaultListId?: string;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (listId: string, data: EntryFormData) => Promise<void>
+  lists: ListWithRole[]
+  defaultListId?: string
 }
 
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
 
 export const AddEntryModal = ({
   open,
@@ -55,16 +58,31 @@ export const AddEntryModal = ({
 }: AddEntryModalProps) => {
   const [selectedResult, setSelectedResult] = useState<TMDBSearchResult | null>(
     null
-  );
-  const [selectedListId, setSelectedListId] = useState(defaultListId ?? "");
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [platform, setPlatform] = useState("");
-  const [watchStatus, setWatchStatus] = useState<EntryStatus>("planned");
-  const [notes, setNotes] = useState("");
-  const [rating, setRating] = useState<UserRatingValue | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  )
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<AddEntryFormValues>({
+    resolver: zodResolver(addEntryFormSchema),
+    defaultValues: {
+      listId: defaultListId ?? "",
+      watchStatus: "planned",
+      platform: "",
+      notes: "",
+      rating: null,
+    },
+    mode: "onChange",
+  })
+
+  const watchStatus = useWatch({ control, name: "watchStatus" })
+  const startDate = useWatch({ control, name: "startDate" })
+  const endDate = useWatch({ control, name: "endDate" })
+  const rating = useWatch({ control, name: "rating" })
 
   const {
     details,
@@ -73,83 +91,70 @@ export const AddEntryModal = ({
   } = useTmdbDetails(
     selectedResult?.media_type ?? null,
     selectedResult?.id ?? null
-  );
+  )
 
   const handleSelect = (result: TMDBSearchResult) => {
-    setSelectedResult(result);
-    setError("");
-  };
+    setSelectedResult(result)
+    setError("")
+  }
 
   const handleClear = useCallback(() => {
-    setSelectedResult(null);
-    setSelectedListId(defaultListId ?? lists[0]?._id ?? "");
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setPlatform("");
-    setWatchStatus("planned");
-    setNotes("");
-    setRating(null);
-    setError("");
-  }, [defaultListId, lists]);
+    setSelectedResult(null)
+    reset({
+      listId: defaultListId ?? lists[0]?._id ?? "",
+      watchStatus: "planned",
+      startDate: undefined,
+      endDate: undefined,
+      platform: "",
+      notes: "",
+      rating: null,
+    })
+    setError("")
+  }, [defaultListId, lists, reset])
 
   const handleClose = () => {
-    onOpenChange(false);
-  };
+    onOpenChange(false)
+  }
 
   const isFormValid = () => {
-    if (!selectedResult || !details || !selectedListId) return false;
-    if (watchStatus === "planned") return true;
-    if (watchStatus === "in_progress") return !!startDate;
-    if (watchStatus === "finished") {
-      if (!startDate) return false;
-      const isMovieEntry = selectedResult.media_type === "movie";
-      if (isMovieEntry) return true;
-      if (!endDate) return false;
-      return endDate >= startDate;
-    }
-    return false;
-  };
+    if (!selectedResult || !details) return false
+    return true
+  }
 
-  const dateError =
-    watchStatus === "finished" && startDate && endDate && endDate < startDate
-      ? "End date must be on or after start date"
-      : "";
+  const onFormSubmit = async (formValues: AddEntryFormValues) => {
+    if (!selectedResult || !details) return
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isFormValid()) return;
-
-    setIsSubmitting(true);
-    setError("");
+    setIsSubmitting(true)
+    setError("")
 
     try {
-      const isMovie = selectedResult!.media_type === "movie";
-      const movieDetails = details as TMDBMovieDetails;
-      const tvDetails = details as TMDBTVDetails;
+      const isMovie = selectedResult.media_type === "movie"
+      const movieDetails = details as TMDBMovieDetails
+      const tvDetails = details as TMDBTVDetails
 
       const baseData = {
-        tmdbId: selectedResult!.id,
-        mediaType: selectedResult!.media_type,
+        tmdbId: selectedResult.id,
+        mediaType: selectedResult.media_type,
         title: isMovie ? movieDetails.title : tvDetails.name,
         originalTitle: isMovie
           ? movieDetails.original_title
           : tvDetails.original_name,
-        overview: details!.overview,
-        posterPath: details!.poster_path,
-        backdropPath: details!.backdrop_path,
+        overview: details.overview,
+        posterPath: details.poster_path,
+        backdropPath: details.backdrop_path,
         releaseDate: isMovie ? movieDetails.release_date : undefined,
         firstAirDate: !isMovie ? tvDetails.first_air_date : undefined,
         runtime: isMovie ? movieDetails.runtime : undefined,
         episodeRunTime: !isMovie ? tvDetails.episode_run_time : undefined,
         numberOfSeasons: !isMovie ? tvDetails.number_of_seasons : undefined,
         numberOfEpisodes: !isMovie ? tvDetails.number_of_episodes : undefined,
-        genres: details!.genres,
-        voteAverage: details!.vote_average,
-        voteCount: details!.vote_count,
-        popularity: details!.popularity,
-        status: details!.status,
+        genres: details.genres,
+        voteAverage: details.vote_average,
+        voteCount: details.vote_count,
+        popularity: details.popularity,
+        status: details.status,
         imdbId: isMovie ? movieDetails.imdb_id : undefined,
-        originalLanguage: details!.original_language,
+        originalLanguage: details.original_language,
         networks: !isMovie
           ? tvDetails.networks.map((n) => ({
               id: n.id,
@@ -157,67 +162,63 @@ export const AddEntryModal = ({
               logoPath: n.logo_path,
             }))
           : undefined,
-        platform: platform || undefined,
-        notes: notes || undefined,
-        rating: rating || undefined,
-      };
+        platform: formValues.platform || undefined,
+        notes: formValues.notes || undefined,
+        rating: formValues.rating || undefined,
+      }
 
-      let formData: EntryFormData;
-      if (watchStatus === "planned") {
-        formData = { ...baseData, watchStatus: "planned" };
-      } else if (watchStatus === "in_progress") {
+      let formData: EntryFormData
+      if (formValues.watchStatus === "planned") {
+        formData = { ...baseData, watchStatus: "planned" }
+      } else if (formValues.watchStatus === "in_progress") {
         formData = {
           ...baseData,
           watchStatus: "in_progress",
-          startDate: format(startDate!, "yyyy-MM-dd"),
-        };
+          startDate: format(formValues.startDate!, "yyyy-MM-dd"),
+        }
       } else {
         const finalEndDate =
-          selectedResult!.media_type === "movie" && !endDate
-            ? startDate!
-            : endDate!;
+          selectedResult.media_type === "movie" && !formValues.endDate
+            ? formValues.startDate!
+            : formValues.endDate!
         formData = {
           ...baseData,
           watchStatus: "finished",
-          startDate: format(startDate!, "yyyy-MM-dd"),
+          startDate: format(formValues.startDate!, "yyyy-MM-dd"),
           endDate: format(finalEndDate, "yyyy-MM-dd"),
-        };
+        }
       }
 
-      await onSubmit(selectedListId, formData);
-      handleClose();
+      await onSubmit(formValues.listId, formData)
+      handleClose()
     } catch {
-      setError("Failed to add entry");
+      setError("Failed to add entry")
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   useEffect(() => {
     if (detailsError) {
-      setError("Failed to load details");
-      setSelectedResult(null);
+      setError("Failed to load details")
+      setSelectedResult(null)
     }
-  }, [detailsError]);
-
-  useEffect(() => {
-    if (watchStatus === "planned") {
-      setStartDate(undefined);
-      setEndDate(undefined);
-    } else if (watchStatus === "in_progress") {
-      setEndDate(undefined);
-    }
-  }, [watchStatus]);
+  }, [detailsError])
 
   useEffect(() => {
     if (open) {
-      handleClear();
+      handleClear()
     }
-  }, [open, handleClear]);
+  }, [open, handleClear])
 
-  const isMovie = selectedResult?.media_type === "movie";
-  const movieDetails = details as TMDBMovieDetails | null;
-  const tvDetails = details as TMDBTVDetails | null;
+  const isMovie = selectedResult?.media_type === "movie"
+  const movieDetails = details as TMDBMovieDetails | null
+  const tvDetails = details as TMDBTVDetails | null
+
+  const dateError =
+    watchStatus === "finished" && startDate && endDate && endDate < startDate
+      ? "End date must be on or after start date"
+      : ""
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -238,7 +239,7 @@ export const AddEntryModal = ({
         {!selectedResult ? (
           <TMDBSearch onSelect={handleSelect} />
         ) : (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onFormSubmit)}>
             <div className="space-y-4">
               <div className="flex gap-4">
                 {selectedResult.poster_path ? (
@@ -302,42 +303,56 @@ export const AddEntryModal = ({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">List *</label>
-                <Select
-                  value={selectedListId}
-                  onValueChange={setSelectedListId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select list..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lists.map((list) => (
-                      <SelectItem key={list._id} value={list._id}>
-                        {list.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="listId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select list..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {lists.map((list) => (
+                          <SelectItem key={list._id} value={list._id}>
+                            {list.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.listId && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.listId.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Status *</label>
-                <Select
-                  value={watchStatus}
-                  onValueChange={(value) =>
-                    setWatchStatus(value as EntryStatus)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ENTRY_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="watchStatus"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) =>
+                        field.onChange(value as EntryStatus)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ENTRY_STATUS_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               {watchStatus !== "planned" && (
@@ -347,24 +362,46 @@ export const AddEntryModal = ({
                       <label className="text-sm font-medium">
                         Start Date *
                       </label>
-                      <DatePicker
-                        date={startDate}
-                        onDateChange={setStartDate}
-                        placeholder="Pick start date"
+                      <Controller
+                        name="startDate"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            date={field.value}
+                            onDateChange={field.onChange}
+                            placeholder="Pick start date"
+                          />
+                        )}
                       />
+                      {errors.startDate && (
+                        <p className="text-sm text-red-600 dark:text-red-400">
+                          {errors.startDate.message}
+                        </p>
+                      )}
                     </div>
                     {watchStatus === "finished" && (
                       <div className="space-y-2">
                         <label className="text-sm font-medium">
                           End Date {isMovie ? "(optional)" : "*"}
                         </label>
-                        <DatePicker
-                          date={endDate}
-                          onDateChange={setEndDate}
-                          placeholder={
-                            isMovie ? "Same as start date" : "Pick end date"
-                          }
+                        <Controller
+                          name="endDate"
+                          control={control}
+                          render={({ field }) => (
+                            <DatePicker
+                              date={field.value}
+                              onDateChange={field.onChange}
+                              placeholder={
+                                isMovie ? "Same as start date" : "Pick end date"
+                              }
+                            />
+                          )}
                         />
+                        {errors.endDate && (
+                          <p className="text-sm text-red-600 dark:text-red-400">
+                            {errors.endDate.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -384,34 +421,60 @@ export const AddEntryModal = ({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Platform</label>
-                <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select platform..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PLATFORMS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="platform"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select platform..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PLATFORMS.map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {p}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Notes</label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Any thoughts or notes..."
+                <Controller
+                  name="notes"
+                  control={control}
+                  render={({ field }) => (
+                    <Textarea
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      rows={2}
+                      placeholder="Any thoughts or notes..."
+                    />
+                  )}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Your Rating</label>
                 <div className="flex items-center gap-3">
-                  <RatingInput value={rating} onChange={setRating} />
+                  <Controller
+                    name="rating"
+                    control={control}
+                    render={({ field }) => (
+                      <RatingInput
+                        value={field.value}
+                        onChange={(value: UserRatingValue | null) =>
+                          field.onChange(value)
+                        }
+                      />
+                    )}
+                  />
                   {rating && (
                     <span className="text-sm text-zinc-500">
                       {RATING_CONFIG[rating].label}
@@ -441,5 +504,5 @@ export const AddEntryModal = ({
         )}
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

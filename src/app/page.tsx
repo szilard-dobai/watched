@@ -353,9 +353,6 @@ const Home = () => {
             {filteredEntries.map((entry) => {
               const rating = Math.round(entry.voteAverage * 10) / 10;
               const genres = entry.genres?.map((g) => g.name).join(", ") || "";
-              const userRating = entry.userRatings?.find(
-                (r) => r.userId === session.user.id
-              )?.rating;
               return (
                 <button
                   key={entry._id}
@@ -399,9 +396,9 @@ const Home = () => {
                       </span>
                     </div>
 
-                    {userRating && (
+                    {entry.userRating && (
                       <div className="absolute left-3 bottom-3">
-                        <RatingInput value={userRating} size="sm" readonly />
+                        <RatingInput value={entry.userRating} size="sm" readonly />
                       </div>
                     )}
 
@@ -455,9 +452,6 @@ const Home = () => {
           <div className="space-y-4">
             {filteredEntries.map((entry) => {
               const rating = Math.round(entry.voteAverage * 10) / 10;
-              const userRating = entry.userRatings?.find(
-                (r) => r.userId === session.user.id
-              )?.rating;
 
               return (
                 <button
@@ -499,8 +493,8 @@ const Home = () => {
                           <span className="text-sm text-zinc-500">
                             {entry.lastPlatform || entry.platform}
                           </span>
-                          {userRating && (
-                            <RatingInput value={userRating} size="sm" readonly />
+                          {entry.userRating && (
+                            <RatingInput value={entry.userRating} size="sm" readonly />
                           )}
                         </div>
                       </div>
@@ -564,7 +558,6 @@ const Home = () => {
           open={!!editingEntry}
           onOpenChange={(open) => !open && setEditingEntry(null)}
           entry={editingEntry}
-          currentUserId={session.user.id}
           onAddWatch={(entryId, data) =>
             addWatch(editingEntry?.listId ?? "", entryId, data)
           }

@@ -50,7 +50,7 @@ export const GET = async () => {
             mediaId: { $toString: "$mediaId" },
             addedByUserId: 1,
             watches: 1,
-            userRatings: 1,
+            userRating: 1,
             entryStatus: 1,
             firstStartDate: 1,
             firstEndDate: 1,

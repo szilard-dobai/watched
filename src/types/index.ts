@@ -4,12 +4,6 @@ export type WatchStatus = "in_progress" | "finished";
 export type EntryStatus = "planned" | WatchStatus;
 export type UserRatingValue = "disliked" | "liked" | "loved";
 
-export interface UserRating {
-  userId: string;
-  rating: UserRatingValue;
-  ratedAt: string;
-}
-
 export interface TMDBSearchResult {
   id: number;
   title?: string;
@@ -116,7 +110,7 @@ export interface Entry {
   networks?: Network[];
   platform?: string;
   watches: Watch[];
-  userRatings?: UserRating[];
+  userRating?: UserRatingValue | null;
   entryStatus: EntryStatus;
   firstStartDate: string | null;
   firstEndDate: string | null;
@@ -309,7 +303,7 @@ export interface DbEntry extends EntryMeta {
   addedByUserId: string;
   platform?: string;
   watches: DbWatch[];
-  userRatings?: UserRating[];
+  userRating?: UserRatingValue | null;
   createdAt: string;
   updatedAt: string;
 }

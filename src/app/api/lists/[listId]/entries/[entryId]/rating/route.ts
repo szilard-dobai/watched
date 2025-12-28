@@ -36,46 +36,16 @@ export const PUT = async (request: Request, { params }: RouteParams) => {
     }
 
     const now = new Date().toISOString()
-    const userId = session.user.id
 
-    if (rating === null) {
-      await entries.updateOne(
-        { _id: new ObjectId(entryId) },
-        {
-          $pull: { userRatings: { userId } },
-          $set: { updatedAt: now },
-        }
-      )
-    } else {
-      const existingRating = entry.userRatings?.find((r) => r.userId === userId)
-
-      if (existingRating) {
-        await entries.updateOne(
-          { _id: new ObjectId(entryId), "userRatings.userId": userId },
-          {
-            $set: {
-              "userRatings.$.rating": rating,
-              "userRatings.$.ratedAt": now,
-              updatedAt: now,
-            },
-          }
-        )
-      } else {
-        await entries.updateOne(
-          { _id: new ObjectId(entryId) },
-          {
-            $push: {
-              userRatings: {
-                userId,
-                rating,
-                ratedAt: now,
-              },
-            },
-            $set: { updatedAt: now },
-          }
-        )
+    await entries.updateOne(
+      { _id: new ObjectId(entryId) },
+      {
+        $set: {
+          userRating: rating,
+          updatedAt: now,
+        },
       }
-    }
+    )
 
     const result = await entries
       .aggregate([
@@ -106,7 +76,7 @@ export const PUT = async (request: Request, { params }: RouteParams) => {
             mediaId: { $toString: "$mediaId" },
             addedByUserId: 1,
             watches: 1,
-            userRatings: 1,
+            userRating: 1,
             entryStatus: 1,
             firstStartDate: 1,
             firstEndDate: 1,

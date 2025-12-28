@@ -34,7 +34,6 @@ interface EditEntryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entry: Entry | null;
-  currentUserId: string;
   onAddWatch: (entryId: string, data: WatchFormData) => Promise<boolean>;
   onUpdateWatch: (
     entryId: string,
@@ -59,7 +58,6 @@ export const EditEntryModal = ({
   open,
   onOpenChange,
   entry,
-  currentUserId,
   onAddWatch,
   onUpdateWatch,
   onDeleteWatch,
@@ -100,9 +98,6 @@ export const EditEntryModal = ({
   const addWatchButtonRef = useRef<HTMLButtonElement>(null);
 
   const isMovie = entry?.mediaType === "movie";
-  const currentUserRating = entry?.userRatings?.find(
-    (r) => r.userId === currentUserId
-  )?.rating;
 
   const isNewWatchFormValid = () => {
     if (newWatchStatus === "in_progress") return !!newWatchStartDate;
@@ -425,13 +420,13 @@ export const EditEntryModal = ({
             <label className="text-sm font-medium">Your Rating</label>
             <div className="flex items-center gap-3">
               <RatingInput
-                value={currentUserRating}
+                value={entry.userRating}
                 onChange={handleUpdateRating}
                 readonly={isUpdatingRating}
               />
-              {currentUserRating && (
+              {entry.userRating && (
                 <span className="text-sm text-zinc-500">
-                  {RATING_CONFIG[currentUserRating].label}
+                  {RATING_CONFIG[entry.userRating].label}
                 </span>
               )}
             </div>

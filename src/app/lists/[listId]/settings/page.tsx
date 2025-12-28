@@ -1,58 +1,59 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, Trash2 } from "lucide-react"
-import { useSession } from "@/lib/auth-client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { InviteLink } from "@/components/lists/invite-link";
+import { MemberList } from "@/components/lists/member-list";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { InviteLink } from "@/components/lists/invite-link"
-import { MemberList } from "@/components/lists/member-list"
-import { useListDetail } from "@/hooks/use-list-detail"
-import { useLists } from "@/hooks/use-lists"
+} from "@/components/ui/card";
+import Header from "@/components/ui/header";
+import { Input } from "@/components/ui/input";
+import { useListDetail } from "@/hooks/use-list-detail";
+import { useLists } from "@/hooks/use-lists";
+import { useSession } from "@/lib/auth-client";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const ListSettingsPage = () => {
-  const router = useRouter()
-  const params = useParams()
-  const listId = params.listId as string
-  const { data: session } = useSession()
+  const router = useRouter();
+  const params = useParams();
+  const listId = params.listId as string;
+  const { data: session } = useSession();
 
   const { list, isLoading, error, updateList, isUpdating } =
-    useListDetail(listId)
-  const { deleteList } = useLists()
-  const [name, setName] = useState("")
-  const [nameInitialized, setNameInitialized] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+    useListDetail(listId);
+  const { deleteList } = useLists();
+  const [name, setName] = useState("");
+  const [nameInitialized, setNameInitialized] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (error) {
-      router.push("/lists")
+      router.push("/lists");
     } else if (list && list.role !== "owner") {
-      router.push("/lists")
+      router.push("/lists");
     }
-  }, [error, list, router])
+  }, [error, list, router]);
 
   if (list && !nameInitialized) {
-    setName(list.name)
-    setNameInitialized(true)
+    setName(list.name);
+    setNameInitialized(true);
   }
 
   const handleSave = async () => {
-    if (!name.trim() || name === list?.name) return
-    await updateList({ name: name.trim() })
-  }
+    if (!name.trim() || name === list?.name) return;
+    await updateList({ name: name.trim() });
+  };
 
   const handleRegenerateInvite = async () => {
-    await updateList({ regenerateInviteCode: true })
-  }
+    await updateList({ regenerateInviteCode: true });
+  };
 
   const handleDelete = async () => {
     if (
@@ -60,16 +61,16 @@ const ListSettingsPage = () => {
         "Are you sure you want to delete this list? This action cannot be undone."
       )
     ) {
-      return
+      return;
     }
 
-    setIsDeleting(true)
-    const success = await deleteList(listId)
+    setIsDeleting(true);
+    const success = await deleteList(listId);
     if (success) {
-      router.push("/lists")
+      router.push("/lists");
     }
-    setIsDeleting(false)
-  }
+    setIsDeleting(false);
+  };
 
   if (isLoading) {
     return (
@@ -78,15 +79,17 @@ const ListSettingsPage = () => {
           <p className="text-zinc-500">Loading...</p>
         </div>
       </main>
-    )
+    );
   }
 
   if (!list || !session) {
-    return null
+    return null;
   }
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      <Header />
+
       <div className="mx-auto max-w-2xl px-4 py-8">
         <Link
           href="/lists"
@@ -177,7 +180,7 @@ const ListSettingsPage = () => {
         </div>
       </div>
     </main>
-  )
-}
+  );
+};
 
-export default ListSettingsPage
+export default ListSettingsPage;

@@ -1,22 +1,25 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ListCard } from "@/components/lists/list-card"
-import { CreateListModal } from "@/components/lists/create-list-modal"
-import { useLists } from "@/hooks/use-lists"
+import { CreateListModal } from "@/components/lists/create-list-modal";
+import { ListCard } from "@/components/lists/list-card";
+import { Button } from "@/components/ui/button";
+import Header from "@/components/ui/header";
+import { useLists } from "@/hooks/use-lists";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 
 const ListsPage = () => {
-  const { lists, isLoading, createList } = useLists()
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const { lists, isLoading, createList } = useLists();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const handleCreateList = async (name: string) => {
-    await createList(name)
-  }
+    await createList(name);
+  };
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      <Header />
+
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -61,7 +64,7 @@ const ListsPage = () => {
         onSubmit={handleCreateList}
       />
     </main>
-  )
-}
+  );
+};
 
-export default ListsPage
+export default ListsPage;

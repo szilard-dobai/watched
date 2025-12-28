@@ -210,12 +210,30 @@ export interface User {
   updatedAt: Date;
 }
 
+export type SortField =
+  | "title"
+  | "date"
+  | "status"
+  | "voteAverage"
+  | "userRating"
+  | "watchCount"
+  | "createdAt";
+
+export type SortDirection = "asc" | "desc";
+
 export interface DashboardFilterState {
   search: string;
   listId: string | "all";
   mediaType: MediaType | "all";
   genre: string | "all";
   platform: string | "all";
+  status: EntryStatus | "all";
+  userRating: UserRatingValue | "none" | "all";
+}
+
+export interface DashboardSortState {
+  field: SortField;
+  direction: SortDirection;
 }
 
 export interface DashboardStats {

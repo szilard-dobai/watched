@@ -53,3 +53,21 @@ export const GENRES = [
   "War",
   "Western",
 ] as const
+
+export const SORT_OPTIONS = [
+  { value: "date", label: "Date" },
+  { value: "title", label: "Title" },
+  { value: "status", label: "Status" },
+  { value: "voteAverage", label: "TMDB Rating" },
+  { value: "userRating", label: "Your Rating" },
+  { value: "watchCount", label: "Watch Count" },
+  { value: "createdAt", label: "Date Added" },
+] as const
+
+export const USER_RATING_FILTER_OPTIONS = [
+  { value: "all", label: "All Ratings" },
+  { value: "loved", label: "Loved" },
+  { value: "liked", label: "Liked" },
+  { value: "disliked", label: "Disliked" },
+  { value: "none", label: "Not Rated" },
+] as const

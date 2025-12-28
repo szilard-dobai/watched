@@ -20,9 +20,25 @@ import { useAllEntries } from "@/hooks/use-all-entries";
 import { useLists } from "@/hooks/use-lists";
 import { entryApi } from "@/lib/api/fetchers";
 import { useSession } from "@/lib/auth-client";
-import { MEDIA_TYPE_OPTIONS, PLATFORMS } from "@/lib/constants";
-import type { DashboardFilterState, EntryFormData, MediaType } from "@/types";
 import {
+  ENTRY_STATUS_OPTIONS,
+  MEDIA_TYPE_OPTIONS,
+  PLATFORMS,
+  SORT_OPTIONS,
+  USER_RATING_FILTER_OPTIONS,
+} from "@/lib/constants";
+import type {
+  DashboardFilterState,
+  DashboardSortState,
+  EntryFormData,
+  EntryStatus,
+  MediaType,
+  SortField,
+  UserRatingValue,
+} from "@/types";
+import {
+  ArrowDownAZ,
+  ArrowUpAZ,
   Calendar,
   Eye,
   Film,
@@ -69,6 +85,13 @@ const Home = () => {
     mediaType: "all",
     genre: "all",
     platform: "all",
+    status: "all",
+    userRating: "all",
+  });
+
+  const [sort, setSort] = useState<DashboardSortState>({
+    field: "date",
+    direction: "desc",
   });
 
   const allGenres = useMemo(() => {
@@ -103,8 +126,26 @@ const Home = () => {
     };
   }, [entries]);
 
-  const filteredEntries = useMemo(() => {
-    return entries.filter((entry) => {
+  const filteredAndSortedEntries = useMemo(() => {
+    const getEntryDate = (entry: (typeof entries)[0]) =>
+      entry.lastEndDate || entry.lastStartDate || null;
+
+    const getEntryPlatform = (entry: (typeof entries)[0]) =>
+      entry.lastPlatform || entry.platform || null;
+
+    const userRatingOrder: Record<UserRatingValue, number> = {
+      disliked: 1,
+      liked: 2,
+      loved: 3,
+    };
+
+    const statusOrder: Record<EntryStatus, number> = {
+      planned: 1,
+      in_progress: 2,
+      finished: 3,
+    };
+
+    const filtered = entries.filter((entry) => {
       if (
         filters.search &&
         !entry.title.toLowerCase().includes(filters.search.toLowerCase())
@@ -127,14 +168,63 @@ const Home = () => {
         return false;
       }
       if (filters.platform !== "all") {
-        const hasWatchOnPlatform = entry.watches?.some(
-          (w) => w.platform === filters.platform
-        );
-        if (!hasWatchOnPlatform) return false;
+        const entryPlatform = getEntryPlatform(entry);
+        if (entryPlatform !== filters.platform) return false;
+      }
+      if (filters.status !== "all" && entry.entryStatus !== filters.status) {
+        return false;
+      }
+      if (filters.userRating !== "all") {
+        if (filters.userRating === "none") {
+          if (entry.userRating) return false;
+        } else {
+          if (entry.userRating !== filters.userRating) return false;
+        }
       }
       return true;
     });
-  }, [entries, filters]);
+
+    const sorted = [...filtered].sort((a, b) => {
+      const dir = sort.direction === "asc" ? 1 : -1;
+
+      switch (sort.field) {
+        case "title":
+          return dir * a.title.localeCompare(b.title);
+
+        case "date": {
+          const dateA = getEntryDate(a);
+          const dateB = getEntryDate(b);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return dir;
+          if (!dateB) return -dir;
+          return dir * dateA.localeCompare(dateB);
+        }
+
+        case "status":
+          return dir * (statusOrder[a.entryStatus] - statusOrder[b.entryStatus]);
+
+        case "voteAverage":
+          return dir * (a.voteAverage - b.voteAverage);
+
+        case "userRating": {
+          const ratingA = a.userRating ? userRatingOrder[a.userRating] : 0;
+          const ratingB = b.userRating ? userRatingOrder[b.userRating] : 0;
+          return dir * (ratingA - ratingB);
+        }
+
+        case "watchCount":
+          return dir * (a.watches.length - b.watches.length);
+
+        case "createdAt":
+          return dir * a.createdAt.localeCompare(b.createdAt);
+
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [entries, filters, sort]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -224,112 +314,193 @@ const Home = () => {
           </Card>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <Input
-            placeholder="Search titles..."
-            value={filters.search}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, search: e.target.value }))
-            }
-            className="w-full sm:w-64"
-          />
-          <Select
-            value={filters.listId}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, listId: value }))
-            }
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="All Lists" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Lists</SelectItem>
-              {lists.map((list) => (
-                <SelectItem key={list._id} value={list._id}>
-                  {list.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.mediaType}
-            onValueChange={(value) =>
-              setFilters((f) => ({
-                ...f,
-                mediaType: value as MediaType | "all",
-              }))
-            }
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              {MEDIA_TYPE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.genre}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, genre: value }))
-            }
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="All Genres" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Genres</SelectItem>
-              {allGenres.map((genre) => (
-                <SelectItem key={genre} value={genre}>
-                  {genre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.platform}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, platform: value }))
-            }
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="All Platforms" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Platforms</SelectItem>
-              {PLATFORMS.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="ml-auto flex gap-1">
-            <Button
-              variant={viewMode === "gallery" ? "default" : "outline"}
-              size="icon"
-              onClick={() => setViewMode("gallery")}
-              title="Gallery view"
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Input
+              placeholder="Search titles..."
+              value={filters.search}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, search: e.target.value }))
+              }
+              className="w-full sm:w-64"
+            />
+            <Select
+              value={filters.listId}
+              onValueChange={(value) =>
+                setFilters((f) => ({ ...f, listId: value }))
+              }
             >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="icon"
-              onClick={() => setViewMode("list")}
-              title="List view"
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All Lists" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Lists</SelectItem>
+                {lists.map((list) => (
+                  <SelectItem key={list._id} value={list._id}>
+                    {list.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.mediaType}
+              onValueChange={(value) =>
+                setFilters((f) => ({
+                  ...f,
+                  mediaType: value as MediaType | "all",
+                }))
+              }
             >
-              <LayoutList className="h-4 w-4" />
-            </Button>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                {MEDIA_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.status}
+              onValueChange={(value) =>
+                setFilters((f) => ({ ...f, status: value as EntryStatus | "all" }))
+              }
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {ENTRY_STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="ml-auto flex gap-1">
+              <Button
+                variant={viewMode === "gallery" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setViewMode("gallery")}
+                title="Gallery view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setViewMode("list")}
+                title="List view"
+              >
+                <LayoutList className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Select
+              value={filters.genre}
+              onValueChange={(value) =>
+                setFilters((f) => ({ ...f, genre: value }))
+              }
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All Genres" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Genres</SelectItem>
+                {allGenres.map((genre) => (
+                  <SelectItem key={genre} value={genre}>
+                    {genre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.platform}
+              onValueChange={(value) =>
+                setFilters((f) => ({ ...f, platform: value }))
+              }
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All Platforms" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Platforms</SelectItem>
+                {PLATFORMS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.userRating}
+              onValueChange={(value) =>
+                setFilters((f) => ({
+                  ...f,
+                  userRating: value as UserRatingValue | "none" | "all",
+                }))
+              }
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All Ratings" />
+              </SelectTrigger>
+              <SelectContent>
+                {USER_RATING_FILTER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-sm text-zinc-500">Sort by:</span>
+              <Select
+                value={sort.field}
+                onValueChange={(value) =>
+                  setSort((s) => ({ ...s, field: value as SortField }))
+                }
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  setSort((s) => ({
+                    ...s,
+                    direction: s.direction === "asc" ? "desc" : "asc",
+                  }))
+                }
+                title={sort.direction === "asc" ? "Ascending" : "Descending"}
+              >
+                {sort.direction === "asc" ? (
+                  <ArrowUpAZ className="h-4 w-4" />
+                ) : (
+                  <ArrowDownAZ className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
         {isLoading ? (
           <p className="text-zinc-500">Loading...</p>
-        ) : filteredEntries.length === 0 ? (
+        ) : filteredAndSortedEntries.length === 0 ? (
           <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-950">
             {entries.length === 0 ? (
               <>
@@ -355,7 +526,7 @@ const Home = () => {
           </div>
         ) : viewMode === "gallery" ? (
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-            {filteredEntries.map((entry) => {
+            {filteredAndSortedEntries.map((entry) => {
               const rating = Math.round(entry.voteAverage * 10) / 10;
               const genres = entry.genres?.map((g) => g.name).join(", ") || "";
               return (
@@ -455,7 +626,7 @@ const Home = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredEntries.map((entry) => {
+            {filteredAndSortedEntries.map((entry) => {
               const rating = Math.round(entry.voteAverage * 10) / 10;
 
               return (

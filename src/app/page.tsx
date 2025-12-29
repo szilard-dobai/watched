@@ -549,7 +549,7 @@ const Home = () => {
           </div>
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm text-nowrap">
               <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                 <tr>
                   <th

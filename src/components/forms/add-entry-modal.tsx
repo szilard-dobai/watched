@@ -45,6 +45,7 @@ interface AddEntryModalProps {
   onSubmit: (listId: string, data: EntryFormData) => Promise<void>
   lists: ListWithRole[]
   defaultListId?: string
+  preSelectedResult?: TMDBSearchResult | null
 }
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
@@ -55,6 +56,7 @@ export const AddEntryModal = ({
   onSubmit,
   lists,
   defaultListId,
+  preSelectedResult,
 }: AddEntryModalProps) => {
   const editableLists = useMemo(
     () => lists.filter((list) => list.role !== "viewer"),
@@ -212,9 +214,23 @@ export const AddEntryModal = ({
 
   useEffect(() => {
     if (open) {
-      handleClear()
+      if (preSelectedResult) {
+        setSelectedResult(preSelectedResult)
+        reset({
+          listId: defaultListId ?? editableLists[0]?._id ?? "",
+          watchStatus: "planned",
+          startDate: undefined,
+          endDate: undefined,
+          platform: "",
+          notes: "",
+          rating: null,
+        })
+        setError("")
+      } else {
+        handleClear()
+      }
     }
-  }, [open, handleClear])
+  }, [open, handleClear, preSelectedResult, defaultListId, editableLists, reset])
 
   const isMovie = selectedResult?.media_type === "movie"
   const movieDetails = details as TMDBMovieDetails | null

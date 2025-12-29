@@ -39,6 +39,7 @@ import {
   Table,
   Tv,
   Upload,
+  Users,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -87,9 +88,27 @@ const Home = () => {
     "gallery"
   );
 
+  const editableEntries = useMemo(() => {
+    const listRoleMap = new Map(lists.map((l) => [l._id, l.role]));
+    return entries.filter((entry) => {
+      const role = listRoleMap.get(entry.listId);
+      return role === "owner" || role === "member";
+    });
+  }, [entries, lists]);
+
+  const editableLists = useMemo(
+    () => lists.filter((list) => list.role !== "viewer"),
+    [lists]
+  );
+
+  const hasViewerLists = useMemo(
+    () => lists.some((list) => list.role === "viewer"),
+    [lists]
+  );
+
   const editingEntry = useMemo(
-    () => entries.find((e) => e._id === editingEntryId) ?? null,
-    [entries, editingEntryId]
+    () => editableEntries.find((e) => e._id === editingEntryId) ?? null,
+    [editableEntries, editingEntryId]
   );
 
   const [filters, setFilters] = useLocalStorage<DashboardFilterState>(
@@ -132,20 +151,28 @@ const Home = () => {
 
   const allGenres = useMemo(() => {
     const genreSet = new Set<string>();
-    entries.forEach((entry) => {
+    editableEntries.forEach((entry) => {
       entry.genres?.forEach((g) => genreSet.add(g.name));
     });
     return Array.from(genreSet).sort();
-  }, [entries]);
+  }, [editableEntries]);
 
   const stats = useMemo(() => {
-    const totalMovies = entries.filter((e) => e.mediaType === "movie").length;
-    const totalTvShows = entries.filter((e) => e.mediaType === "tv").length;
-    const planned = entries.filter((e) => e.entryStatus === "planned").length;
-    const watching = entries.filter(
+    const totalMovies = editableEntries.filter(
+      (e) => e.mediaType === "movie"
+    ).length;
+    const totalTvShows = editableEntries.filter(
+      (e) => e.mediaType === "tv"
+    ).length;
+    const planned = editableEntries.filter(
+      (e) => e.entryStatus === "planned"
+    ).length;
+    const watching = editableEntries.filter(
       (e) => e.entryStatus === "in_progress"
     ).length;
-    const finished = entries.filter((e) => e.entryStatus === "finished").length;
+    const finished = editableEntries.filter(
+      (e) => e.entryStatus === "finished"
+    ).length;
 
     return {
       totalMovies,
@@ -154,10 +181,10 @@ const Home = () => {
       watching,
       finished,
     };
-  }, [entries]);
+  }, [editableEntries]);
 
   const filteredAndSortedEntries = useMemo(() => {
-    const getEntryPlatform = (entry: (typeof entries)[0]) =>
+    const getEntryPlatform = (entry: (typeof editableEntries)[0]) =>
       entry.lastPlatform || entry.platform || null;
 
     const userRatingOrder: Record<UserRatingValue, number> = {
@@ -172,7 +199,7 @@ const Home = () => {
       finished: 3,
     };
 
-    const filtered = entries.filter((entry) => {
+    const filtered = editableEntries.filter((entry) => {
       if (
         filters.search &&
         !entry.title.toLowerCase().includes(filters.search.toLowerCase())
@@ -290,7 +317,7 @@ const Home = () => {
     });
 
     return sorted;
-  }, [entries, filters, sort]);
+  }, [editableEntries, filters, sort]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -329,10 +356,10 @@ const Home = () => {
     return null;
   }
 
-  const defaultListId = lists[0]?._id;
+  const defaultListId = editableLists[0]?._id;
 
   const isLoading = isEntriesLoading || isListsLoading;
-  const hasMultipleLists = lists.length > 1;
+  const hasMultipleLists = editableLists.length > 1;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -354,6 +381,14 @@ const Home = () => {
           <Upload className="mr-2 h-4 w-4" />
           Import
         </Button>
+        {hasViewerLists && (
+          <Link href="/shared">
+            <Button variant="outline" size="sm">
+              <Users className="mr-2 h-4 w-4" />
+              Shared
+            </Button>
+          </Link>
+        )}
         <Link href="/lists">
           <Button variant="outline" size="sm">
             <List className="mr-2 h-4 w-4" />
@@ -535,7 +570,7 @@ const Home = () => {
           <p className="text-zinc-500">Loading...</p>
         ) : filteredAndSortedEntries.length === 0 ? (
           <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-950">
-            {entries.length === 0 ? (
+            {editableEntries.length === 0 ? (
               <>
                 <h3 className="mb-2 text-lg font-medium">No entries yet</h3>
                 <p className="mb-4 text-sm text-zinc-500">
@@ -992,7 +1027,7 @@ const Home = () => {
         open={isAddEntryOpen}
         onOpenChange={setIsAddEntryOpen}
         onSubmit={handleAddEntry}
-        lists={lists}
+        lists={editableLists}
         defaultListId={defaultListId}
       />
 
@@ -1031,7 +1066,7 @@ const Home = () => {
         setFilters={setFilters}
         sort={sort}
         setSort={setSort}
-        lists={lists}
+        lists={editableLists}
         allGenres={allGenres}
         onReset={handleResetFilters}
         hasActiveFilters={hasActiveFilters}
@@ -1040,9 +1075,9 @@ const Home = () => {
       <CSVImportModal
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
-        lists={lists}
+        lists={editableLists}
         onImportComplete={() => refetch()}
-        existingEntries={entries}
+        existingEntries={editableEntries}
       />
 
       <MobileFab

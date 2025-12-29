@@ -6,6 +6,7 @@ export const queryKeys = {
   },
   entries: {
     all: ["entries"] as const,
+    shared: ["entries", "shared"] as const,
     byList: (listId: string) => ["entries", "list", listId] as const,
   },
   tmdb: {

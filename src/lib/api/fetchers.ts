@@ -8,6 +8,7 @@ import type {
   ListRole,
   WatchFormData,
   UserRatingValue,
+  ViewerEntry,
 } from "@/types"
 import type { EntryWithList } from "@/hooks/use-all-entries"
 
@@ -94,6 +95,8 @@ export const listApi = {
 
 export const entryApi = {
   getAll: () => fetchJson<EntryWithList[]>("/api/entries"),
+
+  getShared: () => fetchJson<ViewerEntry[]>("/api/entries/shared"),
 
   getByList: (listId: string) =>
     fetchJson<Entry[]>(`/api/lists/${listId}/entries`),

@@ -366,3 +366,52 @@ export interface ParsedCSVEntry {
   notes: string | null;
   rating: UserRatingValue | null;
 }
+
+export interface ViewerEntry {
+  _id: string;
+  listId: string;
+  listName: string;
+  tmdbId: number;
+  mediaType: MediaType;
+  title: string;
+  originalTitle: string;
+  overview: string;
+  posterPath: string | null;
+  backdropPath: string | null;
+  releaseDate?: string;
+  firstAirDate?: string;
+  runtime?: number | null;
+  episodeRunTime?: number[];
+  numberOfSeasons?: number;
+  numberOfEpisodes?: number;
+  genres: Genre[];
+  voteAverage: number;
+  voteCount: number;
+  popularity: number;
+  status: string;
+  imdbId?: string | null;
+  originalLanguage: string;
+  networks?: Network[];
+  ownerRating?: UserRatingValue | null;
+  createdAt: string;
+}
+
+export type ViewerSortField =
+  | "title"
+  | "listName"
+  | "voteAverage"
+  | "ownerRating"
+  | "createdAt";
+
+export interface ViewerFilterState {
+  search: string;
+  listId: string | "all";
+  mediaType: MediaType | "all";
+  genre: string | "all";
+  ownerRating: UserRatingValue | "none" | "all";
+}
+
+export interface ViewerSortState {
+  field: ViewerSortField;
+  direction: SortDirection;
+}

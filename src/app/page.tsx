@@ -225,6 +225,9 @@ const Home = () => {
         case "title":
           return dir * a.title.localeCompare(b.title);
 
+        case "listName":
+          return dir * a.listName.localeCompare(b.listName);
+
         case "mediaType":
           return dir * a.mediaType.localeCompare(b.mediaType);
 
@@ -329,6 +332,7 @@ const Home = () => {
   const defaultListId = lists[0]?._id;
 
   const isLoading = isEntriesLoading || isListsLoading;
+  const hasMultipleLists = lists.length > 1;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -566,6 +570,16 @@ const Home = () => {
                       Title {renderSortIcon("title")}
                     </span>
                   </th>
+                  {hasMultipleLists && (
+                    <th
+                      className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                      onClick={() => handleTableSort("listName")}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        List {renderSortIcon("listName")}
+                      </span>
+                    </th>
+                  )}
                   <th
                     className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
                     onClick={() => handleTableSort("mediaType")}
@@ -684,6 +698,16 @@ const Home = () => {
                         </span>
                       </div>
                     </td>
+                    {hasMultipleLists && (
+                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                        <span
+                          className="truncate max-w-[120px] block"
+                          title={entry.listName}
+                        >
+                          {entry.listName}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-3 py-2">
                       <Badge variant="outline" className="text-xs">
                         {entry.mediaType === "movie" ? "Movie" : "TV"}
@@ -826,6 +850,14 @@ const Home = () => {
                       <Badge variant="outline" className="text-xs">
                         {entry.mediaType === "movie" ? "Movie" : "TV"}
                       </Badge>
+                      {hasMultipleLists && (
+                        <span
+                          className="text-sm text-zinc-500 truncate"
+                          title={entry.listName}
+                        >
+                          {entry.listName}
+                        </span>
+                      )}
                       <span className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
                         {entry.lastPlatform || entry.platform}
                       </span>
@@ -891,6 +923,11 @@ const Home = () => {
                               {entry.watches.length} watch
                               {entry.watches.length > 1 && "es"}
                             </Badge>
+                          )}
+                          {hasMultipleLists && (
+                            <span className="text-sm text-zinc-500">
+                              {entry.listName}
+                            </span>
                           )}
                           <span className="text-sm text-zinc-500">
                             {entry.lastPlatform || entry.platform}

@@ -1,5 +1,5 @@
 export type MediaType = "movie" | "tv";
-export type ListRole = "owner" | "member";
+export type ListRole = "owner" | "member" | "viewer";
 export type WatchStatus = "in_progress" | "finished";
 export type EntryStatus = "planned" | WatchStatus;
 export type UserRatingValue = "disliked" | "liked" | "loved";
@@ -213,6 +213,7 @@ export interface User {
 
 export type SortField =
   | "title"
+  | "listName"
   | "mediaType"
   | "date"
   | "endDate"

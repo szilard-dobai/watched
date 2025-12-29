@@ -72,6 +72,8 @@ export const CSVImportModal = ({
   onImportComplete,
   existingEntries = [],
 }: CSVImportModalProps) => {
+  const editableLists = lists.filter((list) => list.role !== "viewer");
+
   const [step, setStep] = useState<Step>("upload");
   const [error, setError] = useState<string | null>(null);
   const [csvData, setCsvData] = useState<{
@@ -505,7 +507,7 @@ export const CSVImportModal = ({
                   <SelectValue placeholder="Choose a list..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {lists.map((list) => (
+                  {editableLists.map((list) => (
                     <SelectItem key={list._id} value={list._id}>
                       {list.name}
                     </SelectItem>

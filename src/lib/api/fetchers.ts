@@ -71,6 +71,16 @@ export const listApi = {
       body: JSON.stringify({ userId }),
     }),
 
+  updateMemberRole: (listId: string, userId: string, role: ListRole) =>
+    fetchJson<{ success: boolean; role: ListRole }>(
+      `/api/lists/${listId}/members`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role }),
+      }
+    ),
+
   getJoinInfo: (inviteCode: string) =>
     fetchJson<{ name: string }>(`/api/lists/join?inviteCode=${inviteCode}`),
 

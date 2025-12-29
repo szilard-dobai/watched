@@ -4,6 +4,7 @@ import {
   getMembershipsCollection,
   getUserCollection,
 } from "@/lib/db/collections";
+import type { ListRole } from "@/types";
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 
@@ -83,6 +84,54 @@ export const DELETE = async (request: Request, { params }: RouteParams) => {
     }
 
     return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+};
+
+export const PATCH = async (request: Request, { params }: RouteParams) => {
+  try {
+    const session = await requireAuth();
+    const { listId } = await params;
+    const { userId: targetUserId, role: newRole } = await request.json();
+
+    const callerRole = await checkListAccess(listId, session.user.id);
+    if (callerRole !== "owner") {
+      return NextResponse.json(
+        { error: "Only owner can change member roles" },
+        { status: 403 }
+      );
+    }
+
+    if (targetUserId === session.user.id) {
+      return NextResponse.json(
+        { error: "Owner cannot change their own role" },
+        { status: 400 }
+      );
+    }
+
+    const validRoles: ListRole[] = ["member", "viewer"];
+    if (!validRoles.includes(newRole)) {
+      return NextResponse.json(
+        { error: "Invalid role. Must be 'member' or 'viewer'" },
+        { status: 400 }
+      );
+    }
+
+    const memberships = await getMembershipsCollection();
+    const result = await memberships.updateOne(
+      {
+        listId: new ObjectId(listId),
+        userId: targetUserId,
+      },
+      { $set: { role: newRole } }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, role: newRole });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

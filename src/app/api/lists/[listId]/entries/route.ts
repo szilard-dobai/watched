@@ -105,6 +105,13 @@ export const POST = async (request: Request, { params }: RouteParams) => {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Viewers cannot add entries" },
+        { status: 403 }
+      )
+    }
+
     const data: EntryFormData = await request.json()
 
     const entries = await getEntriesCollection()

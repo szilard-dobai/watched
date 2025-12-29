@@ -20,6 +20,13 @@ export const POST = async (request: Request, { params }: RouteParams) => {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Viewers cannot add watches" },
+        { status: 403 }
+      )
+    }
+
     const { status, startDate, endDate, platform, notes } = await request.json()
 
     if (!status) {

@@ -51,12 +51,12 @@ describe("/api/lists/join", () => {
 
       expect(response.status).toBe(200)
       expect(data.name).toBe("Shared Movies")
-      expect(data.role).toBe("member")
+      expect(data.role).toBe("viewer")
       expect(mockMembershipsCollection.insertOne).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: mockUserId,
           listId: mockList._id,
-          role: "member",
+          role: "viewer",
         })
       )
     })

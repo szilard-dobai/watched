@@ -57,6 +57,7 @@ export const GENRES = [
 export const SORT_OPTIONS = [
   { value: "date", label: "Date" },
   { value: "title", label: "Title" },
+  { value: "listName", label: "List" },
   { value: "status", label: "Status" },
   { value: "voteAverage", label: "TMDB Rating" },
   { value: "userRating", label: "Your Rating" },

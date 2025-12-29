@@ -20,6 +20,13 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Viewers cannot edit watches" },
+        { status: 403 }
+      )
+    }
+
     const entries = await getEntriesCollection()
     const entry = await entries.findOne({
       _id: new ObjectId(entryId),
@@ -88,6 +95,13 @@ export const DELETE = async (_request: Request, { params }: RouteParams) => {
     const role = await checkListAccess(listId, session.user.id)
     if (!role) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
+    }
+
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Viewers cannot delete watches" },
+        { status: 403 }
+      )
     }
 
     const entries = await getEntriesCollection()

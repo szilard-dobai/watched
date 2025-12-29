@@ -70,14 +70,14 @@ export const POST = async (request: Request) => {
       _id: new ObjectId(),
       userId: session.user.id,
       listId: list._id,
-      role: "member",
+      role: "viewer",
       joinedAt: new Date().toISOString(),
     });
 
     return NextResponse.json({
       ...list,
       _id: list._id.toString(),
-      role: "member",
+      role: "viewer",
     });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

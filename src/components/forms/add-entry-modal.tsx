@@ -35,7 +35,7 @@ import type {
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
 import Image from "next/image"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { Badge } from "../ui/badge"
 
@@ -56,6 +56,11 @@ export const AddEntryModal = ({
   lists,
   defaultListId,
 }: AddEntryModalProps) => {
+  const editableLists = useMemo(
+    () => lists.filter((list) => list.role !== "viewer"),
+    [lists]
+  )
+
   const [selectedResult, setSelectedResult] = useState<TMDBSearchResult | null>(
     null
   )
@@ -101,7 +106,7 @@ export const AddEntryModal = ({
   const handleClear = useCallback(() => {
     setSelectedResult(null)
     reset({
-      listId: defaultListId ?? lists[0]?._id ?? "",
+      listId: defaultListId ?? editableLists[0]?._id ?? "",
       watchStatus: "planned",
       startDate: undefined,
       endDate: undefined,
@@ -110,7 +115,7 @@ export const AddEntryModal = ({
       rating: null,
     })
     setError("")
-  }, [defaultListId, lists, reset])
+  }, [defaultListId, editableLists, reset])
 
   const handleClose = () => {
     onOpenChange(false)
@@ -312,7 +317,7 @@ export const AddEntryModal = ({
                         <SelectValue placeholder="Select list..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {lists.map((list) => (
+                        {editableLists.map((list) => (
                           <SelectItem key={list._id} value={list._id}>
                             {list.name}
                           </SelectItem>

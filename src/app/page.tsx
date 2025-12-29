@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FilterModal } from "@/components/ui/filter-modal";
 import Header from "@/components/ui/header";
+import { MobileFab } from "@/components/mobile-fab";
 import { Input } from "@/components/ui/input";
 import { RatingInput } from "@/components/ui/rating-input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -332,7 +333,11 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <Header>
-        <Button size="sm" onClick={() => setIsAddEntryOpen(true)}>
+        <Button
+          size="sm"
+          onClick={() => setIsAddEntryOpen(true)}
+          className="hidden lg:inline-flex"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Entry
         </Button>
@@ -340,6 +345,7 @@ const Home = () => {
           variant="outline"
           size="sm"
           onClick={() => setIsImportModalOpen(true)}
+          className="hidden lg:inline-flex"
         >
           <Upload className="mr-2 h-4 w-4" />
           Import
@@ -1000,6 +1006,11 @@ const Home = () => {
         lists={lists}
         onImportComplete={() => refetch()}
         existingEntries={entries}
+      />
+
+      <MobileFab
+        onAddEntryClick={() => setIsAddEntryOpen(true)}
+        onImportClick={() => setIsImportModalOpen(true)}
       />
     </div>
   );

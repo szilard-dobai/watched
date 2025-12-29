@@ -20,10 +20,13 @@ import type {
   DashboardSortState,
   EntryFormData,
   EntryStatus,
+  SortField,
   UserRatingValue,
 } from "@/types";
 import {
   Calendar,
+  ChevronDown,
+  ChevronUp,
   Eye,
   Film,
   Filter,
@@ -32,6 +35,7 @@ import {
   List,
   Plus,
   Star,
+  Table,
   Tv,
   Upload,
 } from "lucide-react";
@@ -76,7 +80,7 @@ const Home = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useLocalStorage<"gallery" | "list">(
+  const [viewMode, setViewMode] = useLocalStorage<"gallery" | "list" | "table">(
     "dashboard-view-mode",
     "gallery"
   );
@@ -149,9 +153,6 @@ const Home = () => {
   }, [entries]);
 
   const filteredAndSortedEntries = useMemo(() => {
-    const getEntryDate = (entry: (typeof entries)[0]) =>
-      entry.lastEndDate || entry.lastStartDate || null;
-
     const getEntryPlatform = (entry: (typeof entries)[0]) =>
       entry.lastPlatform || entry.platform || null;
 
@@ -213,17 +214,38 @@ const Home = () => {
         case "title":
           return dir * a.title.localeCompare(b.title);
 
+        case "mediaType":
+          return dir * a.mediaType.localeCompare(b.mediaType);
+
         case "date": {
-          const dateA = getEntryDate(a);
-          const dateB = getEntryDate(b);
+          const dateA = a.lastStartDate;
+          const dateB = b.lastStartDate;
           if (!dateA && !dateB) return 0;
-          if (!dateA) return dir;
-          if (!dateB) return -dir;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return dir * dateA.localeCompare(dateB);
+        }
+
+        case "endDate": {
+          const dateA = a.lastEndDate;
+          const dateB = b.lastEndDate;
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
           return dir * dateA.localeCompare(dateB);
         }
 
         case "status":
           return dir * (statusOrder[a.entryStatus] - statusOrder[b.entryStatus]);
+
+        case "platform": {
+          const platformA = getEntryPlatform(a) || "";
+          const platformB = getEntryPlatform(b) || "";
+          if (!platformA && !platformB) return 0;
+          if (!platformA) return 1;
+          if (!platformB) return -1;
+          return dir * platformA.localeCompare(platformB);
+        }
 
         case "voteAverage":
           return dir * (a.voteAverage - b.voteAverage);
@@ -259,6 +281,26 @@ const Home = () => {
   const handleAddEntry = async (listId: string, data: EntryFormData) => {
     await entryApi.create(listId, data);
     refetch();
+  };
+
+  const handleTableSort = (field: SortField) => {
+    if (sort.field === field) {
+      setSort((s) => ({
+        ...s,
+        direction: s.direction === "asc" ? "desc" : "asc",
+      }));
+    } else {
+      setSort({ field, direction: "desc" });
+    }
+  };
+
+  const renderSortIcon = (field: SortField) => {
+    if (sort.field !== field) return null;
+    return sort.direction === "asc" ? (
+      <ChevronUp className="h-3 w-3" />
+    ) : (
+      <ChevronDown className="h-3 w-3" />
+    );
   };
 
   if (!session) {
@@ -390,6 +432,14 @@ const Home = () => {
             >
               <LayoutList className="h-4 w-4" />
             </Button>
+            <Button
+              variant={viewMode === "table" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("table")}
+              title="Table view"
+            >
+              <Table className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
@@ -418,6 +468,171 @@ const Home = () => {
                 </p>
               </>
             )}
+          </div>
+        ) : viewMode === "table" ? (
+          <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+            <table className="w-full text-sm">
+              <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
+                <tr>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("title")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Title {renderSortIcon("title")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("mediaType")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Type {renderSortIcon("mediaType")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("status")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Status {renderSortIcon("status")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("platform")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Platform {renderSortIcon("platform")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("date")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Started {renderSortIcon("date")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("endDate")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Ended {renderSortIcon("endDate")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("createdAt")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Added {renderSortIcon("createdAt")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("userRating")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Rating {renderSortIcon("userRating")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-center font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("watchCount")}
+                  >
+                    <span className="inline-flex items-center justify-center gap-1">
+                      Watches {renderSortIcon("watchCount")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("voteAverage")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      TMDB {renderSortIcon("voteAverage")}
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                {filteredAndSortedEntries.map((entry) => (
+                  <tr
+                    key={entry._id}
+                    onClick={() => setEditingEntryId(entry._id)}
+                    className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  >
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        {entry.posterPath ? (
+                          <div className="relative h-6 w-4 shrink-0 overflow-hidden rounded-sm">
+                            <Image
+                              src={`${TMDB_IMAGE_BASE}${entry.posterPath}`}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="16px"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex h-6 w-4 shrink-0 items-center justify-center rounded-sm bg-zinc-200 dark:bg-zinc-800">
+                            {entry.mediaType === "movie" ? (
+                              <Film className="h-3 w-3 text-zinc-400" />
+                            ) : (
+                              <Tv className="h-3 w-3 text-zinc-400" />
+                            )}
+                          </div>
+                        )}
+                        <span className="truncate max-w-[200px]" title={entry.title}>
+                          {entry.title}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <Badge variant="outline" className="text-xs">
+                        {entry.mediaType === "movie" ? "Movie" : "TV"}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2">
+                      <StatusBadge status={entry.entryStatus} />
+                    </td>
+                    <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                      {entry.lastPlatform || entry.platform || "—"}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                      {entry.lastStartDate ? formatDate(entry.lastStartDate) : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                      {entry.lastEndDate ? formatDate(entry.lastEndDate) : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                      {formatDate(entry.createdAt)}
+                    </td>
+                    <td className="px-3 py-2">
+                      {entry.userRating ? (
+                        <RatingInput value={entry.userRating} size="sm" readonly />
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {entry.watches.length || "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {entry.voteAverage > 0 ? (
+                        <span className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          {Math.round(entry.voteAverage * 10) / 10}
+                        </span>
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : viewMode === "gallery" ? (
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">

@@ -212,8 +212,11 @@ export interface User {
 
 export type SortField =
   | "title"
+  | "mediaType"
   | "date"
+  | "endDate"
   | "status"
+  | "platform"
   | "voteAverage"
   | "userRating"
   | "watchCount"

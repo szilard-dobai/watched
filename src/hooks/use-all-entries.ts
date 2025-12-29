@@ -3,7 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query-keys"
 import { entryApi } from "@/lib/api/fetchers"
-import type { Entry, UserRatingValue, WatchFormData } from "@/types"
+import { computeEntryMeta } from "@/lib/entry-meta"
+import type { DbWatch, Entry, UserRatingValue, WatchFormData } from "@/types"
 
 export interface EntryWithList extends Entry {
   listName: string
@@ -34,9 +35,12 @@ export const useAllEntries = () => {
     }) => entryApi.addWatch(listId, entryId, watchData),
     onSuccess: (newWatch, { entryId }) => {
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
-        old?.map((e) =>
-          e._id === entryId ? { ...e, watches: [...e.watches, newWatch] } : e
-        ) ?? []
+        old?.map((e) => {
+          if (e._id !== entryId) return e
+          const updatedWatches = [...e.watches, newWatch]
+          const meta = computeEntryMeta(updatedWatches as DbWatch[])
+          return { ...e, watches: updatedWatches, ...meta }
+        }) ?? []
       )
     },
   })
@@ -55,16 +59,14 @@ export const useAllEntries = () => {
     }) => entryApi.updateWatch(listId, entryId, watchId, watchData),
     onSuccess: (_, { entryId, watchId, watchData }) => {
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
-        old?.map((e) =>
-          e._id === entryId
-            ? {
-                ...e,
-                watches: e.watches.map((w) =>
-                  w._id === watchId ? { ...w, ...watchData } : w
-                ),
-              }
-            : e
-        ) ?? []
+        old?.map((e) => {
+          if (e._id !== entryId) return e
+          const updatedWatches = e.watches.map((w) =>
+            w._id === watchId ? { ...w, ...watchData } : w
+          )
+          const meta = computeEntryMeta(updatedWatches as DbWatch[])
+          return { ...e, watches: updatedWatches, ...meta }
+        }) ?? []
       )
     },
   })
@@ -81,11 +83,12 @@ export const useAllEntries = () => {
     }) => entryApi.deleteWatch(listId, entryId, watchId),
     onSuccess: (_, { entryId, watchId }) => {
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
-        old?.map((e) =>
-          e._id === entryId
-            ? { ...e, watches: e.watches.filter((w) => w._id !== watchId) }
-            : e
-        ) ?? []
+        old?.map((e) => {
+          if (e._id !== entryId) return e
+          const updatedWatches = e.watches.filter((w) => w._id !== watchId)
+          const meta = computeEntryMeta(updatedWatches as DbWatch[])
+          return { ...e, watches: updatedWatches, ...meta }
+        }) ?? []
       )
     },
   })

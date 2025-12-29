@@ -148,6 +148,39 @@ export const entryApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rating }),
     }),
+
+  updateMedia: (
+    listId: string,
+    entryId: string,
+    media: {
+      tmdbId: number
+      mediaType: "movie" | "tv"
+      title: string
+      originalTitle: string
+      overview: string
+      posterPath: string | null
+      backdropPath: string | null
+      releaseDate?: string
+      firstAirDate?: string
+      runtime?: number | null
+      episodeRunTime?: number[]
+      numberOfSeasons?: number
+      numberOfEpisodes?: number
+      genres: { id: number; name: string }[]
+      voteAverage: number
+      voteCount: number
+      popularity: number
+      status: string
+      imdbId?: string | null
+      originalLanguage: string
+      networks?: { id: number; name: string; logoPath: string | null }[]
+    }
+  ) =>
+    fetchJson<Entry>(`/api/lists/${listId}/entries/${entryId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ media }),
+    }),
 }
 
 export const tmdbApi = {

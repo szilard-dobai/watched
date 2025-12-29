@@ -20,19 +20,22 @@ import {
 } from "@/components/ui/select"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { PLATFORMS } from "@/lib/constants"
-import type { Entry, UserRatingValue, Watch } from "@/types"
+import type { Entry, TMDBSearchResult, UserRatingValue, Watch } from "@/types"
 import { format } from "date-fns"
-import { Film, Pencil, Plus, Star, Trash2, Tv } from "lucide-react"
+import { Film, Pencil, Plus, RefreshCw, Star, Trash2, Tv } from "lucide-react"
 import Image from "next/image"
 import { useRef, useState } from "react"
 import { WatchForm } from "./watch-form"
+import { TMDBSearch } from "./tmdb-search"
 import type { WatchFormValues } from "@/lib/schemas"
 import type { WatchFormData } from "@/types"
+import { entryApi, tmdbApi } from "@/lib/api/fetchers"
 
 interface EditEntryModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   entry: Entry | null
+  listId: string
   onAddWatch: (entryId: string, data: WatchFormData) => Promise<boolean>
   onUpdateWatch: (
     entryId: string,
@@ -49,6 +52,7 @@ interface EditEntryModalProps {
     entryId: string,
     rating: UserRatingValue | null
   ) => Promise<boolean>
+  onMediaUpdated: () => void
 }
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185"
@@ -75,12 +79,14 @@ export const EditEntryModal = ({
   open,
   onOpenChange,
   entry,
+  listId,
   onAddWatch,
   onUpdateWatch,
   onDeleteWatch,
   onDeleteEntry,
   onUpdateEntryPlatform,
   onUpdateRating,
+  onMediaUpdated,
 }: EditEntryModalProps) => {
   const [showAddWatch, setShowAddWatch] = useState(false)
   const [isAddingWatch, setIsAddingWatch] = useState(false)
@@ -92,6 +98,8 @@ export const EditEntryModal = ({
   const [entryPlatform, setEntryPlatform] = useState(entry?.platform ?? "")
   const [isUpdatingPlatform, setIsUpdatingPlatform] = useState(false)
   const [isUpdatingRating, setIsUpdatingRating] = useState(false)
+  const [showChangeTitle, setShowChangeTitle] = useState(false)
+  const [isUpdatingMedia, setIsUpdatingMedia] = useState(false)
 
   const addWatchButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -100,8 +108,71 @@ export const EditEntryModal = ({
   const handleClose = () => {
     setShowAddWatch(false)
     setEditingWatch(null)
+    setShowChangeTitle(false)
     setError("")
     onOpenChange(false)
+  }
+
+  const handleSelectNewMedia = async (result: TMDBSearchResult) => {
+    if (!entry) return
+
+    setIsUpdatingMedia(true)
+    setError("")
+
+    try {
+      const details = await tmdbApi.getDetails(result.media_type, result.id)
+
+      const mediaData = {
+        tmdbId: result.id,
+        mediaType: result.media_type,
+        title:
+          result.media_type === "movie"
+            ? (details as { title: string }).title
+            : (details as { name: string }).name,
+        originalTitle:
+          result.media_type === "movie"
+            ? (details as { original_title: string }).original_title
+            : (details as { original_name: string }).original_name,
+        overview: details.overview,
+        posterPath: details.poster_path,
+        backdropPath: details.backdrop_path,
+        genres: details.genres,
+        voteAverage: details.vote_average,
+        voteCount: details.vote_count,
+        popularity: details.popularity,
+        status: details.status,
+        originalLanguage: details.original_language,
+        ...(result.media_type === "movie"
+          ? {
+              releaseDate: (details as { release_date: string }).release_date,
+              runtime: (details as { runtime: number | null }).runtime,
+              imdbId: (details as { imdb_id: string | null }).imdb_id,
+            }
+          : {
+              firstAirDate: (details as { first_air_date: string }).first_air_date,
+              episodeRunTime: (details as { episode_run_time: number[] }).episode_run_time,
+              numberOfSeasons: (details as { number_of_seasons: number }).number_of_seasons,
+              numberOfEpisodes: (details as { number_of_episodes: number }).number_of_episodes,
+              networks: (
+                details as {
+                  networks: { id: number; name: string; logo_path: string | null }[]
+                }
+              ).networks?.map((n) => ({
+                id: n.id,
+                name: n.name,
+                logoPath: n.logo_path,
+              })),
+            }),
+      }
+
+      await entryApi.updateMedia(listId, entry._id, mediaData)
+      setShowChangeTitle(false)
+      onMediaUpdated()
+    } catch {
+      setError("Failed to update title")
+    }
+
+    setIsUpdatingMedia(false)
   }
 
   const handleAddWatch = async (values: WatchFormValues) => {
@@ -259,7 +330,20 @@ export const EditEntryModal = ({
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold line-clamp-2">{entry.title}</h3>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold line-clamp-2">{entry.title}</h3>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowChangeTitle(!showChangeTitle)}
+                  disabled={isUpdatingMedia}
+                  className="shrink-0"
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                  Change
+                </Button>
+              </div>
               <div className="mt-1 flex items-center gap-2 text-sm text-zinc-500">
                 <Badge variant="outline" className="text-xs">
                   {entry.mediaType === "movie" ? "Movie" : "TV"}
@@ -271,21 +355,33 @@ export const EditEntryModal = ({
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                {entry.overview}
-              </p>
-              {!!entry.genres.length && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {entry.genres.map((genre) => (
-                    <Badge
-                      key={genre.id}
-                      variant="secondary"
-                      className="text-xs"
-                    >
-                      {genre.name}
-                    </Badge>
-                  ))}
+              {showChangeTitle && (
+                <div className="mt-3">
+                  <p className="text-sm text-zinc-500 mb-2">
+                    Search for the correct title:
+                  </p>
+                  <TMDBSearch onSelect={handleSelectNewMedia} />
                 </div>
+              )}
+              {!showChangeTitle && (
+                <>
+                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                    {entry.overview}
+                  </p>
+                  {!!entry.genres.length && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {entry.genres.map((genre) => (
+                        <Badge
+                          key={genre.id}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {genre.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

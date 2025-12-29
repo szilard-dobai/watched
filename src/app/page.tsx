@@ -1,6 +1,7 @@
 "use client";
 
 import { AddEntryModal } from "@/components/forms/add-entry-modal";
+import { CSVImportModal } from "@/components/forms/csv-import-modal";
 import { EditEntryModal } from "@/components/forms/edit-entry-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
   Plus,
   Star,
   Tv,
+  Upload,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -71,6 +73,7 @@ const Home = () => {
   const { lists, isLoading: isListsLoading } = useLists();
 
   const [isAddEntryOpen, setIsAddEntryOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useLocalStorage<"gallery" | "list">(
@@ -272,6 +275,14 @@ const Home = () => {
         <Button size="sm" onClick={() => setIsAddEntryOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Entry
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsImportModalOpen(true)}
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          Import
         </Button>
         <Link href="/lists">
           <Button variant="outline" size="sm">
@@ -618,6 +629,7 @@ const Home = () => {
           open={!!editingEntry}
           onOpenChange={(open) => !open && setEditingEntryId(null)}
           entry={editingEntry}
+          listId={editingEntry.listId}
           onAddWatch={(entryId, data) =>
             addWatch(editingEntry?.listId ?? "", entryId, data)
           }
@@ -636,6 +648,7 @@ const Home = () => {
           onUpdateRating={(entryId, rating) =>
             updateRating(editingEntry?.listId ?? "", entryId, rating)
           }
+          onMediaUpdated={() => refetch()}
         />
       )}
 
@@ -650,6 +663,14 @@ const Home = () => {
         allGenres={allGenres}
         onReset={handleResetFilters}
         hasActiveFilters={hasActiveFilters}
+      />
+
+      <CSVImportModal
+        open={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
+        lists={lists}
+        onImportComplete={() => refetch()}
+        existingEntries={entries}
       />
     </div>
   );

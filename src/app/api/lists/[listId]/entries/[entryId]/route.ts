@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { ObjectId } from "mongodb"
 import { requireAuth } from "@/lib/api/auth-helpers"
 import { checkListAccess, checkEntryPermission } from "@/lib/api/list-helpers"
-import { getEntriesCollection } from "@/lib/db/collections"
+import { getEntriesCollection, getMediaCollection } from "@/lib/db/collections"
 import type { Entry } from "@/types"
 
 interface RouteParams {
@@ -128,16 +128,55 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
     }
 
     const updates = await request.json()
-    const allowedFields: string[] = ["platform"]
+    const now = new Date().toISOString()
 
     const filteredUpdates: Record<string, unknown> = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     }
 
-    for (const field of allowedFields) {
-      if (field in updates) {
-        filteredUpdates[field] = updates[field]
+    if ("platform" in updates) {
+      filteredUpdates.platform = updates.platform
+    }
+
+    if (updates.media) {
+      const media = await getMediaCollection()
+      let mediaDoc = await media.findOne({
+        tmdbId: updates.media.tmdbId,
+        mediaType: updates.media.mediaType,
+      })
+
+      if (!mediaDoc) {
+        const mediaId = new ObjectId()
+        mediaDoc = {
+          _id: mediaId,
+          tmdbId: updates.media.tmdbId,
+          mediaType: updates.media.mediaType,
+          title: updates.media.title,
+          originalTitle: updates.media.originalTitle,
+          overview: updates.media.overview,
+          posterPath: updates.media.posterPath,
+          backdropPath: updates.media.backdropPath,
+          releaseDate: updates.media.releaseDate,
+          firstAirDate: updates.media.firstAirDate,
+          runtime: updates.media.runtime,
+          episodeRunTime: updates.media.episodeRunTime,
+          numberOfSeasons: updates.media.numberOfSeasons,
+          numberOfEpisodes: updates.media.numberOfEpisodes,
+          genres: updates.media.genres,
+          voteAverage: updates.media.voteAverage,
+          voteCount: updates.media.voteCount,
+          popularity: updates.media.popularity,
+          status: updates.media.status,
+          imdbId: updates.media.imdbId,
+          originalLanguage: updates.media.originalLanguage,
+          networks: updates.media.networks,
+          createdAt: now,
+          updatedAt: now,
+        }
+        await media.insertOne(mediaDoc)
       }
+
+      filteredUpdates.mediaId = mediaDoc._id
     }
 
     await entries.updateOne(

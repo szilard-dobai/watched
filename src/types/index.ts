@@ -325,3 +325,36 @@ export interface DbEntry extends EntryMeta {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CSVRow {
+  [key: string]: string;
+}
+
+export interface CSVColumnMapping {
+  title: string | null;
+  mediaType: string | null;
+  status: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  platform: string | null;
+  notes: string | null;
+  rating: string | null;
+}
+
+export interface CSVImportResult {
+  success: number;
+  failed: number;
+  skipped: number;
+  errors: { row: number; title: string; error: string }[];
+}
+
+export interface ParsedCSVEntry {
+  title: string;
+  mediaType: MediaType;
+  status: EntryStatus | null;
+  startDate: string | null;
+  endDate: string | null;
+  platform: string | null;
+  notes: string | null;
+  rating: UserRatingValue | null;
+}

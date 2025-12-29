@@ -194,13 +194,37 @@ export const FilterModal = ({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Rating</label>
+              <label className="mb-1.5 block text-sm font-medium">Your Rating</label>
               <Select
                 value={filters.userRating}
                 onValueChange={(value) =>
                   setFilters((f) => ({
                     ...f,
                     userRating: value as UserRatingValue | "none" | "all",
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Ratings" />
+                </SelectTrigger>
+                <SelectContent>
+                  {USER_RATING_FILTER_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Owner Rating</label>
+              <Select
+                value={filters.ownerRating}
+                onValueChange={(value) =>
+                  setFilters((f) => ({
+                    ...f,
+                    ownerRating: value as UserRatingValue | "none" | "all",
                   }))
                 }
               >

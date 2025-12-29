@@ -51,6 +51,7 @@ export const GET = async () => {
             addedByUserId: 1,
             watches: 1,
             userRating: 1,
+            ownerRating: 1,
             entryStatus: 1,
             firstStartDate: 1,
             firstEndDate: 1,

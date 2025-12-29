@@ -54,6 +54,7 @@ const DEFAULT_FILTERS: DashboardFilterState = {
   platform: "all",
   status: "all",
   userRating: "all",
+  ownerRating: "all",
 };
 
 const DEFAULT_SORT: DashboardSortState = {
@@ -113,6 +114,7 @@ const Home = () => {
     filters.platform !== "all" ||
     filters.status !== "all" ||
     filters.userRating !== "all" ||
+    filters.ownerRating !== "all" ||
     sort.field !== "date" ||
     sort.direction !== "desc";
 
@@ -124,6 +126,7 @@ const Home = () => {
     filters.platform !== "all",
     filters.status !== "all",
     filters.userRating !== "all",
+    filters.ownerRating !== "all",
   ].filter(Boolean).length;
 
   const allGenres = useMemo(() => {
@@ -204,6 +207,13 @@ const Home = () => {
           if (entry.userRating !== filters.userRating) return false;
         }
       }
+      if (filters.ownerRating !== "all") {
+        if (filters.ownerRating === "none") {
+          if (entry.ownerRating) return false;
+        } else {
+          if (entry.ownerRating !== filters.ownerRating) return false;
+        }
+      }
       return true;
     });
 
@@ -253,6 +263,12 @@ const Home = () => {
         case "userRating": {
           const ratingA = a.userRating ? userRatingOrder[a.userRating] : 0;
           const ratingB = b.userRating ? userRatingOrder[b.userRating] : 0;
+          return dir * (ratingA - ratingB);
+        }
+
+        case "ownerRating": {
+          const ratingA = a.ownerRating ? userRatingOrder[a.ownerRating] : 0;
+          const ratingB = b.ownerRating ? userRatingOrder[b.ownerRating] : 0;
           return dir * (ratingA - ratingB);
         }
 
@@ -599,6 +615,14 @@ const Home = () => {
                     </span>
                   </th>
                   <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("ownerRating")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Owner {renderSortIcon("ownerRating")}
+                    </span>
+                  </th>
+                  <th
                     className="px-3 py-2 text-center font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
                     onClick={() => handleTableSort("watchCount")}
                   >
@@ -672,6 +696,13 @@ const Home = () => {
                     <td className="px-3 py-2">
                       {entry.userRating ? (
                         <RatingInput value={entry.userRating} size="sm" readonly />
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {entry.ownerRating ? (
+                        <RatingInput value={entry.ownerRating} size="sm" readonly />
                       ) : (
                         <span className="text-zinc-400">—</span>
                       )}

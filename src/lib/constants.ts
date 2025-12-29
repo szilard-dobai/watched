@@ -60,6 +60,7 @@ export const SORT_OPTIONS = [
   { value: "status", label: "Status" },
   { value: "voteAverage", label: "TMDB Rating" },
   { value: "userRating", label: "Your Rating" },
+  { value: "ownerRating", label: "Owner Rating" },
   { value: "watchCount", label: "Watch Count" },
   { value: "createdAt", label: "Date Added" },
 ] as const

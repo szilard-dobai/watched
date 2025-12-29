@@ -111,6 +111,7 @@ export interface Entry {
   platform?: string;
   watches: Watch[];
   userRating?: UserRatingValue | null;
+  ownerRating?: UserRatingValue | null;
   entryStatus: EntryStatus;
   firstStartDate: string | null;
   firstEndDate: string | null;
@@ -219,6 +220,7 @@ export type SortField =
   | "platform"
   | "voteAverage"
   | "userRating"
+  | "ownerRating"
   | "watchCount"
   | "createdAt";
 
@@ -232,6 +234,7 @@ export interface DashboardFilterState {
   platform: string | "all";
   status: EntryStatus | "all";
   userRating: UserRatingValue | "none" | "all";
+  ownerRating: UserRatingValue | "none" | "all";
 }
 
 export interface DashboardSortState {
@@ -325,6 +328,7 @@ export interface DbEntry extends EntryMeta {
   platform?: string;
   watches: DbWatch[];
   userRating?: UserRatingValue | null;
+  ownerRating?: UserRatingValue | null;
   createdAt: string;
   updatedAt: string;
 }

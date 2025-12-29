@@ -48,10 +48,7 @@ interface EditEntryModalProps {
     entryId: string,
     platform: string
   ) => Promise<boolean>
-  onUpdateRating: (
-    entryId: string,
-    rating: UserRatingValue | null
-  ) => Promise<boolean>
+  onUpdateRating: (entryId: string, rating: UserRatingValue | null) => Promise<boolean>
   onMediaUpdated: () => void
 }
 
@@ -427,6 +424,18 @@ export const EditEntryModal = ({
               )}
             </div>
           </div>
+
+          {entry.ownerRating && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Owner Rating</label>
+              <div className="flex items-center gap-3">
+                <RatingInput value={entry.ownerRating} readonly />
+                <span className="text-sm text-zinc-500">
+                  {RATING_CONFIG[entry.ownerRating].label}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">

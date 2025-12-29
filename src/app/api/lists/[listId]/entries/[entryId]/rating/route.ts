@@ -36,12 +36,14 @@ export const PUT = async (request: Request, { params }: RouteParams) => {
     }
 
     const now = new Date().toISOString()
+    const isOwner = role === "owner"
 
     await entries.updateOne(
       { _id: new ObjectId(entryId) },
       {
         $set: {
           userRating: rating,
+          ...(isOwner && { ownerRating: rating }),
           updatedAt: now,
         },
       }
@@ -77,6 +79,7 @@ export const PUT = async (request: Request, { params }: RouteParams) => {
             addedByUserId: 1,
             watches: 1,
             userRating: 1,
+            ownerRating: 1,
             entryStatus: 1,
             firstStartDate: 1,
             firstEndDate: 1,

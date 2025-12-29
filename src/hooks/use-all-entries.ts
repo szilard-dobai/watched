@@ -133,7 +133,13 @@ export const useAllEntries = () => {
     onSuccess: (updatedEntry, { entryId }) => {
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
         old?.map((e) =>
-          e._id === entryId ? { ...e, userRating: updatedEntry.userRating } : e
+          e._id === entryId
+            ? {
+                ...e,
+                userRating: updatedEntry.userRating,
+                ownerRating: updatedEntry.ownerRating,
+              }
+            : e
         ) ?? []
       )
     },

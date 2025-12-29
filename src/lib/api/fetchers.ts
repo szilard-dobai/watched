@@ -138,11 +138,7 @@ export const entryApi = {
       }
     ),
 
-  updateRating: (
-    listId: string,
-    entryId: string,
-    rating: UserRatingValue | null
-  ) =>
+  updateRating: (listId: string, entryId: string, rating: UserRatingValue | null) =>
     fetchJson<Entry>(`/api/lists/${listId}/entries/${entryId}/rating`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

@@ -246,7 +246,9 @@ const Home = () => {
         }
 
         case "status":
-          return dir * (statusOrder[a.entryStatus] - statusOrder[b.entryStatus]);
+          return (
+            dir * (statusOrder[a.entryStatus] - statusOrder[b.entryStatus])
+          );
 
         case "platform": {
           const platformA = getEntryPlatform(a) || "";
@@ -608,18 +610,18 @@ const Home = () => {
                   </th>
                   <th
                     className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
-                    onClick={() => handleTableSort("userRating")}
+                    onClick={() => handleTableSort("ownerRating")}
                   >
-                    <span className="inline-flex items-center gap-1">
-                      Rating {renderSortIcon("userRating")}
+                    <span className="inline-flex items-center gap-1 text-nowrap">
+                      Owner&apos;s Rating {renderSortIcon("ownerRating")}
                     </span>
                   </th>
                   <th
                     className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
-                    onClick={() => handleTableSort("ownerRating")}
+                    onClick={() => handleTableSort("userRating")}
                   >
-                    <span className="inline-flex items-center gap-1">
-                      Owner {renderSortIcon("ownerRating")}
+                    <span className="inline-flex items-center gap-1 text-nowrap">
+                      My Rating {renderSortIcon("userRating")}
                     </span>
                   </th>
                   <th
@@ -668,7 +670,10 @@ const Home = () => {
                             )}
                           </div>
                         )}
-                        <span className="truncate max-w-[200px]" title={entry.title}>
+                        <span
+                          className="truncate max-w-[200px]"
+                          title={entry.title}
+                        >
                           {entry.title}
                         </span>
                       </div>
@@ -685,7 +690,9 @@ const Home = () => {
                       {entry.lastPlatform || entry.platform || "—"}
                     </td>
                     <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
-                      {entry.lastStartDate ? formatDate(entry.lastStartDate) : "—"}
+                      {entry.lastStartDate
+                        ? formatDate(entry.lastStartDate)
+                        : "—"}
                     </td>
                     <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
                       {entry.lastEndDate ? formatDate(entry.lastEndDate) : "—"}
@@ -694,15 +701,23 @@ const Home = () => {
                       {formatDate(entry.createdAt)}
                     </td>
                     <td className="px-3 py-2">
-                      {entry.userRating ? (
-                        <RatingInput value={entry.userRating} size="sm" readonly />
+                      {entry.ownerRating ? (
+                        <RatingInput
+                          value={entry.ownerRating}
+                          size="sm"
+                          readonly
+                        />
                       ) : (
                         <span className="text-zinc-400">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      {entry.ownerRating ? (
-                        <RatingInput value={entry.ownerRating} size="sm" readonly />
+                      {entry.userRating ? (
+                        <RatingInput
+                          value={entry.userRating}
+                          size="sm"
+                          readonly
+                        />
                       ) : (
                         <span className="text-zinc-400">—</span>
                       )}
@@ -775,7 +790,11 @@ const Home = () => {
 
                     {entry.userRating && (
                       <div className="absolute left-3 bottom-3">
-                        <RatingInput value={entry.userRating} size="sm" readonly />
+                        <RatingInput
+                          value={entry.userRating}
+                          size="sm"
+                          readonly
+                        />
                       </div>
                     )}
 
@@ -871,7 +890,11 @@ const Home = () => {
                             {entry.lastPlatform || entry.platform}
                           </span>
                           {entry.userRating && (
-                            <RatingInput value={entry.userRating} size="sm" readonly />
+                            <RatingInput
+                              value={entry.userRating}
+                              size="sm"
+                              readonly
+                            />
                           )}
                         </div>
                       </div>

@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useListDetail } from "@/hooks/use-list-detail";
 import { useLists } from "@/hooks/use-lists";
 import { useSession } from "@/lib/auth-client";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, LogOut, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -28,18 +28,19 @@ const ListSettingsPage = () => {
 
   const { list, isLoading, error, updateList, isUpdating } =
     useListDetail(listId);
-  const { deleteList } = useLists();
+  const { deleteList, leaveList } = useLists();
   const [name, setName] = useState("");
   const [nameInitialized, setNameInitialized] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  const isOwner = list?.role === "owner";
 
   useEffect(() => {
     if (error) {
       router.push("/lists");
-    } else if (list && list.role !== "owner") {
-      router.push("/lists");
     }
-  }, [error, list, router]);
+  }, [error, router]);
 
   if (list && !nameInitialized) {
     setName(list.name);
@@ -70,6 +71,23 @@ const ListSettingsPage = () => {
       router.push("/lists");
     }
     setIsDeleting(false);
+  };
+
+  const handleLeave = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to leave this list? You will lose access to all entries."
+      )
+    ) {
+      return;
+    }
+
+    setIsLeaving(true);
+    const success = await leaveList(listId);
+    if (success) {
+      router.push("/lists");
+    }
+    setIsLeaving(false);
   };
 
   if (isLoading) {
@@ -105,49 +123,61 @@ const ListSettingsPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>General</CardTitle>
-              <CardDescription>Update your list name</CardDescription>
+              <CardDescription>
+                {isOwner ? "Update your list name" : "View list details"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium">
                   List Name
                 </label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+                {isOwner ? (
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                ) : (
+                  <p className="text-lg font-medium">{list.name}</p>
+                )}
               </div>
-              <Button
-                onClick={handleSave}
-                disabled={isUpdating || !name.trim() || name === list.name}
-              >
-                {isUpdating ? "Saving..." : "Save Changes"}
-              </Button>
+              {isOwner && (
+                <Button
+                  onClick={handleSave}
+                  disabled={isUpdating || !name.trim() || name === list.name}
+                >
+                  {isUpdating ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Invite Link</CardTitle>
-              <CardDescription>
-                Share this link to invite others to your list
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InviteLink
-                inviteCode={list.inviteCode}
-                onRegenerate={handleRegenerateInvite}
-                showRegenerate
-              />
-            </CardContent>
-          </Card>
+          {isOwner && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Invite Link</CardTitle>
+                <CardDescription>
+                  Share this link to invite others to your list
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <InviteLink
+                  inviteCode={list.inviteCode}
+                  onRegenerate={handleRegenerateInvite}
+                  showRegenerate
+                />
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>
               <CardTitle>Members</CardTitle>
               <CardDescription>
-                Manage who has access to this list
+                {isOwner
+                  ? "Manage who has access to this list"
+                  : "View who has access to this list"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -163,18 +193,31 @@ const ListSettingsPage = () => {
             <CardHeader>
               <CardTitle className="text-red-600">Danger Zone</CardTitle>
               <CardDescription>
-                Permanently delete this list and all its entries
+                {isOwner
+                  ? "Permanently delete this list and all its entries"
+                  : "Leave this list and lose access to all entries"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {isDeleting ? "Deleting..." : "Delete List"}
-              </Button>
+              {isOwner ? (
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? "Deleting..." : "Delete List"}
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  onClick={handleLeave}
+                  disabled={isLeaving}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {isLeaving ? "Leaving..." : "Leave List"}
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

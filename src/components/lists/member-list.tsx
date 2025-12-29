@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { Crown, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,16 @@ export const MemberList = ({
   const { members, isLoading, removeMember, removingUserId } =
     useListMembers(listId)
 
+  const sortedMembers = useMemo(() => {
+    return [...members].sort((a, b) => {
+      if (a.role === "owner") return -1
+      if (b.role === "owner") return 1
+      if (a.userId === currentUserId) return -1
+      if (b.userId === currentUserId) return 1
+      return a.name.localeCompare(b.name)
+    })
+  }, [members, currentUserId])
+
   const handleRemove = async (userId: string) => {
     await removeMember(userId)
   }
@@ -34,7 +45,7 @@ export const MemberList = ({
         Members ({members.length})
       </label>
       <div className="divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-        {members.map((member) => (
+        {sortedMembers.map((member) => (
           <div
             key={member._id}
             className="flex items-center justify-between p-3"
@@ -51,6 +62,9 @@ export const MemberList = ({
                       <Crown className="h-3 w-3" />
                       Owner
                     </Badge>
+                  )}
+                  {member.userId === currentUserId && (
+                    <Badge variant="outline">You</Badge>
                   )}
                 </div>
                 <span className="text-xs text-zinc-500">{member.email}</span>

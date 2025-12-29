@@ -336,7 +336,19 @@ const Home = () => {
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-6 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              filters.mediaType === "movie"
+                ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950"
+                : ""
+            }`}
+            onClick={() =>
+              setFilters((f) => ({
+                ...f,
+                mediaType: f.mediaType === "movie" ? "all" : "movie",
+              }))
+            }
+          >
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900">
                 <Film className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -347,7 +359,19 @@ const Home = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              filters.mediaType === "tv"
+                ? "ring-2 ring-purple-500 bg-purple-50 dark:bg-purple-950"
+                : ""
+            }`}
+            onClick={() =>
+              setFilters((f) => ({
+                ...f,
+                mediaType: f.mediaType === "tv" ? "all" : "tv",
+              }))
+            }
+          >
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-900">
                 <Tv className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -358,7 +382,19 @@ const Home = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              filters.status === "planned"
+                ? "ring-2 ring-zinc-500 bg-zinc-100 dark:bg-zinc-900"
+                : ""
+            }`}
+            onClick={() =>
+              setFilters((f) => ({
+                ...f,
+                status: f.status === "planned" ? "all" : "planned",
+              }))
+            }
+          >
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-full bg-zinc-100 p-2 dark:bg-zinc-800">
                 <Calendar className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
@@ -369,7 +405,19 @@ const Home = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              filters.status === "in_progress"
+                ? "ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-950"
+                : ""
+            }`}
+            onClick={() =>
+              setFilters((f) => ({
+                ...f,
+                status: f.status === "in_progress" ? "all" : "in_progress",
+              }))
+            }
+          >
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-full bg-yellow-100 p-2 dark:bg-yellow-900">
                 <Eye className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
@@ -380,7 +428,19 @@ const Home = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              filters.status === "finished"
+                ? "ring-2 ring-green-500 bg-green-50 dark:bg-green-950"
+                : ""
+            }`}
+            onClick={() =>
+              setFilters((f) => ({
+                ...f,
+                status: f.status === "finished" ? "all" : "finished",
+              }))
+            }
+          >
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-full bg-green-100 p-2 dark:bg-green-900">
                 <Star className="h-5 w-5 text-green-600 dark:text-green-400" />

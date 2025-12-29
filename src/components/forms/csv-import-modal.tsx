@@ -1,29 +1,29 @@
-"use client"
+"use client";
 
-import { useCallback, useState } from "react"
-import { useDropzone } from "react-dropzone"
+import { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { entryApi, tmdbApi } from "@/lib/api/fetchers"
+} from "@/components/ui/select";
+import { entryApi, tmdbApi } from "@/lib/api/fetchers";
 import {
   parseCSV,
   mapRowToEntry,
   autoDetectMapping,
   inferStatus,
-} from "@/lib/csv-parser"
+} from "@/lib/csv-parser";
 import type {
   CSVColumnMapping,
   CSVImportResult,
@@ -31,7 +31,7 @@ import type {
   EntryFormData,
   ListWithRole,
   Entry,
-} from "@/types"
+} from "@/types";
 import {
   AlertCircle,
   CheckCircle,
@@ -39,17 +39,17 @@ import {
   Loader2,
   Upload,
   XCircle,
-} from "lucide-react"
+} from "lucide-react";
 
 interface CSVImportModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  lists: ListWithRole[]
-  onImportComplete: () => void
-  existingEntries?: Entry[]
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  lists: ListWithRole[];
+  onImportComplete: () => void;
+  existingEntries?: Entry[];
 }
 
-type Step = "upload" | "mapping" | "importing" | "results"
+type Step = "upload" | "mapping" | "importing" | "results";
 
 const MAPPING_OPTIONS = [
   { value: "_none", label: "(Don't import)" },
@@ -61,7 +61,9 @@ const MAPPING_OPTIONS = [
   { value: "platform", label: "Platform" },
   { value: "notes", label: "Notes" },
   { value: "rating", label: "Your Rating" },
-]
+];
+
+const PREVIEW_LIMIT = 100;
 
 export const CSVImportModal = ({
   open,
@@ -70,12 +72,12 @@ export const CSVImportModal = ({
   onImportComplete,
   existingEntries = [],
 }: CSVImportModalProps) => {
-  const [step, setStep] = useState<Step>("upload")
-  const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState<Step>("upload");
+  const [error, setError] = useState<string | null>(null);
   const [csvData, setCsvData] = useState<{
-    headers: string[]
-    rows: CSVRow[]
-  } | null>(null)
+    headers: string[];
+    rows: CSVRow[];
+  } | null>(null);
   const [mapping, setMapping] = useState<CSVColumnMapping>({
     title: null,
     mediaType: null,
@@ -85,20 +87,23 @@ export const CSVImportModal = ({
     platform: null,
     notes: null,
     rating: null,
-  })
-  const [targetListId, setTargetListId] = useState<string>("")
-  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 })
+  });
+  const [targetListId, setTargetListId] = useState<string>("");
+  const [importProgress, setImportProgress] = useState({
+    current: 0,
+    total: 0,
+  });
   const [result, setResult] = useState<CSVImportResult>({
     success: 0,
     failed: 0,
     skipped: 0,
     errors: [],
-  })
-  
+  });
+
   const resetState = () => {
-    setStep("upload")
-    setError(null)
-    setCsvData(null)
+    setStep("upload");
+    setError(null);
+    setCsvData(null);
     setMapping({
       title: null,
       mediaType: null,
@@ -108,97 +113,93 @@ export const CSVImportModal = ({
       platform: null,
       notes: null,
       rating: null,
-    })
-    setTargetListId("")
-    setImportProgress({ current: 0, total: 0 })
-    setResult({ success: 0, failed: 0, skipped: 0, errors: [] })
-  }
+    });
+    setTargetListId("");
+    setImportProgress({ current: 0, total: 0 });
+    setResult({ success: 0, failed: 0, skipped: 0, errors: [] });
+  };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    setError(null)
-    const file = acceptedFiles[0]
+    setError(null);
+    const file = acceptedFiles[0];
 
-    if (!file) return
+    if (!file) return;
 
     if (!file.name.endsWith(".csv")) {
-      setError("Please select a CSV file")
-      return
+      setError("Please select a CSV file");
+      return;
     }
 
     try {
-      const data = await parseCSV(file)
+      const data = await parseCSV(file);
 
       if (data.rows.length === 0) {
-        setError("CSV file is empty")
-        return
+        setError("CSV file is empty");
+        return;
       }
 
-      setCsvData(data)
-      const detectedMapping = autoDetectMapping(data.headers)
-      setMapping(detectedMapping)
-      setStep("mapping")
+      setCsvData(data);
+      const detectedMapping = autoDetectMapping(data.headers);
+      setMapping(detectedMapping);
+      setStep("mapping");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to parse CSV")
+      setError(err instanceof Error ? err.message : "Failed to parse CSV");
     }
-  }, [])
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "text/csv": [".csv"] },
     multiple: false,
-  })
+  });
 
   const updateMapping = (field: keyof CSVColumnMapping, value: string) => {
-    setMapping((prev) => ({ ...prev, [field]: value || null }))
-  }
+    setMapping((prev) => ({ ...prev, [field]: value || null }));
+  };
 
-  const canImport = mapping.title && targetListId
+  const canImport = mapping.title && targetListId;
 
-  const importableRowCount = csvData
-    ? csvData.rows.filter((row) => mapping.title && row[mapping.title]?.trim())
-        .length
-    : 0
+  const importableRows =
+    csvData?.rows.filter(
+      (row) => mapping.title && row[mapping.title]?.trim()
+    ) || [];
 
   const handleImport = async () => {
-    if (!csvData || !canImport) return
+    if (!csvData || !canImport) return;
 
-    setStep("importing")
-    setImportProgress({ current: 0, total: csvData.rows.length })
+    setStep("importing");
+    setImportProgress({ current: 0, total: csvData.rows.length });
 
     const importResult: CSVImportResult = {
       success: 0,
       failed: 0,
       skipped: 0,
       errors: [],
-    }
+    };
 
-    const rowsWithTitle = csvData.rows.filter(
-      (row) => mapping.title && row[mapping.title]?.trim()
-    )
-
-    for (let i = 0; i < rowsWithTitle.length; i++) {
-      const row = rowsWithTitle[i]
-      setImportProgress({ current: i + 1, total: rowsWithTitle.length })
+    for (let i = 0; i < importableRows.length; i++) {
+      const row = importableRows[i];
+      setImportProgress({ current: i + 1, total: importableRows.length });
 
       try {
-        const parsed = mapRowToEntry(row, mapping)
+        const parsed = mapRowToEntry(row, mapping);
         if (!parsed) {
-          continue
+          continue;
         }
 
         const existingEntry = existingEntries.find(
           (e) =>
             e.listId === targetListId &&
             e.title.toLowerCase() === parsed.title.toLowerCase()
-        )
+        );
 
         if (existingEntry) {
-          const entryStatus = inferStatus(parsed)
+          const entryStatus = inferStatus(parsed);
 
           if (entryStatus !== "planned" && parsed.startDate) {
             const existingWatch = existingEntry.watches.find(
               (w) => w.startDate === parsed.startDate
-            )
+            );
 
             if (existingWatch) {
               await entryApi.updateWatch(
@@ -212,7 +213,7 @@ export const CSVImportModal = ({
                   platform: parsed.platform || undefined,
                   notes: parsed.notes || undefined,
                 }
-              )
+              );
             } else {
               await entryApi.addWatch(targetListId, existingEntry._id, {
                 status: entryStatus,
@@ -220,7 +221,7 @@ export const CSVImportModal = ({
                 endDate: parsed.endDate || undefined,
                 platform: parsed.platform || undefined,
                 notes: parsed.notes || undefined,
-              })
+              });
             }
           }
 
@@ -229,27 +230,28 @@ export const CSVImportModal = ({
               targetListId,
               existingEntry._id,
               parsed.rating
-            )
+            );
           }
 
-          importResult.skipped++
-          continue
+          importResult.skipped++;
+          continue;
         }
 
-        let entryData: EntryFormData
-        const entryStatus = inferStatus(parsed)
+        let entryData: EntryFormData;
+        const entryStatus = inferStatus(parsed);
 
         try {
-          const searchResult = await tmdbApi.search(parsed.title)
-          const matchingResult = searchResult.results.find(
-            (r) => r.media_type === parsed.mediaType
-          ) || searchResult.results[0]
+          const searchResult = await tmdbApi.search(parsed.title);
+          const matchingResult =
+            searchResult.results.find(
+              (r) => r.media_type === parsed.mediaType
+            ) || searchResult.results[0];
 
           if (matchingResult) {
             const details = await tmdbApi.getDetails(
               matchingResult.media_type,
               matchingResult.id
-            )
+            );
 
             const baseData = {
               tmdbId: matchingResult.id,
@@ -276,38 +278,60 @@ export const CSVImportModal = ({
               rating: parsed.rating || undefined,
               ...(matchingResult.media_type === "movie"
                 ? {
-                    releaseDate: (details as { release_date: string }).release_date,
+                    releaseDate: (details as { release_date: string })
+                      .release_date,
                     runtime: (details as { runtime: number | null }).runtime,
                     imdbId: (details as { imdb_id: string | null }).imdb_id,
                   }
                 : {
-                    firstAirDate: (details as { first_air_date: string }).first_air_date,
-                    episodeRunTime: (details as { episode_run_time: number[] }).episode_run_time,
-                    numberOfSeasons: (details as { number_of_seasons: number }).number_of_seasons,
-                    numberOfEpisodes: (details as { number_of_episodes: number }).number_of_episodes,
-                    networks: (details as { networks: { id: number; name: string; logo_path: string | null }[] }).networks?.map((n) => ({
+                    firstAirDate: (details as { first_air_date: string })
+                      .first_air_date,
+                    episodeRunTime: (details as { episode_run_time: number[] })
+                      .episode_run_time,
+                    numberOfSeasons: (details as { number_of_seasons: number })
+                      .number_of_seasons,
+                    numberOfEpisodes: (
+                      details as { number_of_episodes: number }
+                    ).number_of_episodes,
+                    networks: (
+                      details as {
+                        networks: {
+                          id: number;
+                          name: string;
+                          logo_path: string | null;
+                        }[];
+                      }
+                    ).networks?.map((n) => ({
                       id: n.id,
                       name: n.name,
                       logoPath: n.logo_path,
                     })),
                   }),
-            }
+            };
 
             if (entryStatus === "planned") {
-              entryData = { ...baseData, watchStatus: "planned" } as EntryFormData
+              entryData = {
+                ...baseData,
+                watchStatus: "planned",
+              } as EntryFormData;
             } else if (entryStatus === "in_progress") {
               entryData = {
                 ...baseData,
                 watchStatus: "in_progress",
-                startDate: parsed.startDate || new Date().toISOString().split("T")[0],
-              } as EntryFormData
+                startDate:
+                  parsed.startDate || new Date().toISOString().split("T")[0],
+              } as EntryFormData;
             } else {
               entryData = {
                 ...baseData,
                 watchStatus: "finished",
-                startDate: parsed.startDate || new Date().toISOString().split("T")[0],
-                endDate: parsed.endDate || parsed.startDate || new Date().toISOString().split("T")[0],
-              } as EntryFormData
+                startDate:
+                  parsed.startDate || new Date().toISOString().split("T")[0],
+                endDate:
+                  parsed.endDate ||
+                  parsed.startDate ||
+                  new Date().toISOString().split("T")[0],
+              } as EntryFormData;
             }
           } else {
             const baseData = {
@@ -327,23 +351,31 @@ export const CSVImportModal = ({
               platform: parsed.platform || undefined,
               notes: parsed.notes || undefined,
               rating: parsed.rating || undefined,
-            }
+            };
 
             if (entryStatus === "planned") {
-              entryData = { ...baseData, watchStatus: "planned" } as EntryFormData
+              entryData = {
+                ...baseData,
+                watchStatus: "planned",
+              } as EntryFormData;
             } else if (entryStatus === "in_progress") {
               entryData = {
                 ...baseData,
                 watchStatus: "in_progress",
-                startDate: parsed.startDate || new Date().toISOString().split("T")[0],
-              } as EntryFormData
+                startDate:
+                  parsed.startDate || new Date().toISOString().split("T")[0],
+              } as EntryFormData;
             } else {
               entryData = {
                 ...baseData,
                 watchStatus: "finished",
-                startDate: parsed.startDate || new Date().toISOString().split("T")[0],
-                endDate: parsed.endDate || parsed.startDate || new Date().toISOString().split("T")[0],
-              } as EntryFormData
+                startDate:
+                  parsed.startDate || new Date().toISOString().split("T")[0],
+                endDate:
+                  parsed.endDate ||
+                  parsed.startDate ||
+                  new Date().toISOString().split("T")[0],
+              } as EntryFormData;
             }
           }
         } catch {
@@ -364,51 +396,59 @@ export const CSVImportModal = ({
             platform: parsed.platform || undefined,
             notes: parsed.notes || undefined,
             rating: parsed.rating || undefined,
-          }
+          };
 
           if (entryStatus === "planned") {
-            entryData = { ...baseData, watchStatus: "planned" } as EntryFormData
+            entryData = {
+              ...baseData,
+              watchStatus: "planned",
+            } as EntryFormData;
           } else if (entryStatus === "in_progress") {
             entryData = {
               ...baseData,
               watchStatus: "in_progress",
-              startDate: parsed.startDate || new Date().toISOString().split("T")[0],
-            } as EntryFormData
+              startDate:
+                parsed.startDate || new Date().toISOString().split("T")[0],
+            } as EntryFormData;
           } else {
             entryData = {
               ...baseData,
               watchStatus: "finished",
-              startDate: parsed.startDate || new Date().toISOString().split("T")[0],
-              endDate: parsed.endDate || parsed.startDate || new Date().toISOString().split("T")[0],
-            } as EntryFormData
+              startDate:
+                parsed.startDate || new Date().toISOString().split("T")[0],
+              endDate:
+                parsed.endDate ||
+                parsed.startDate ||
+                new Date().toISOString().split("T")[0],
+            } as EntryFormData;
           }
         }
 
-        await entryApi.create(targetListId, entryData)
-        importResult.success++
+        await entryApi.create(targetListId, entryData);
+        importResult.success++;
       } catch (err) {
-        importResult.failed++
+        importResult.failed++;
         importResult.errors.push({
           row: i + 2,
           title: row[mapping.title || ""] || "(unknown)",
           error: err instanceof Error ? err.message : "Unknown error",
-        })
+        });
       }
     }
 
-    setResult(importResult)
-    setStep("results")
-    onImportComplete()
-  }
+    setResult(importResult);
+    setStep("results");
+    onImportComplete();
+  };
 
   const handleClose = () => {
-    resetState()
-    onOpenChange(false)
-  }
+    resetState();
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100%-2rem)] lg:max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Import from CSV</DialogTitle>
           <DialogDescription>
@@ -440,7 +480,9 @@ export const CSVImportModal = ({
                   <p className="text-zinc-600 dark:text-zinc-400 mb-2">
                     Drag and drop a CSV file here, or click to select
                   </p>
-                  <p className="text-sm text-zinc-500">Only .csv files are accepted</p>
+                  <p className="text-sm text-zinc-500">
+                    Only .csv files are accepted
+                  </p>
                 </div>
               )}
             </div>
@@ -455,7 +497,7 @@ export const CSVImportModal = ({
         )}
 
         {step === "mapping" && csvData && (
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <div>
               <h3 className="font-medium mb-3">Select Target List</h3>
               <Select value={targetListId} onValueChange={setTargetListId}>
@@ -478,14 +520,14 @@ export const CSVImportModal = ({
                 {csvData.headers.map((header) => {
                   const currentMapping = Object.entries(mapping).find(
                     ([, value]) => value === header
-                  )?.[0]
+                  )?.[0];
 
                   return (
                     <div
                       key={header}
                       className="flex items-center gap-4 p-2 bg-zinc-50 dark:bg-zinc-900 rounded"
                     >
-                      <div className="flex items-center gap-2 min-w-[150px]">
+                      <div className="flex items-center gap-2 flex-1 min-w-[150px]">
                         <FileSpreadsheet className="h-4 w-4 text-zinc-400" />
                         <span className="font-mono text-sm">{header}</span>
                       </div>
@@ -497,17 +539,17 @@ export const CSVImportModal = ({
                             setMapping((prev) => ({
                               ...prev,
                               [currentMapping]: null,
-                            }))
+                            }));
                           }
                           if (value && value !== "_none") {
                             updateMapping(
                               value as keyof CSVColumnMapping,
                               header
-                            )
+                            );
                           }
                         }}
                       >
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="flex-1 w-[180px]">
                           <SelectValue placeholder="Don't import" />
                         </SelectTrigger>
                         <SelectContent>
@@ -519,15 +561,15 @@ export const CSVImportModal = ({
                         </SelectContent>
                       </Select>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
 
             <div>
-              <h3 className="font-medium mb-3">Preview (first 5 rows)</h3>
-              <div className="overflow-x-auto border rounded dark:border-zinc-800">
-                <table className="w-full text-sm">
+              <h3 className="font-medium mb-3">Preview</h3>
+              <div className="w-full overflow-x-auto border rounded dark:border-zinc-800">
+                <table className="min-w-max text-sm">
                   <thead className="bg-zinc-100 dark:bg-zinc-800">
                     <tr>
                       {csvData.headers.map((header) => (
@@ -541,13 +583,13 @@ export const CSVImportModal = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {csvData.rows.slice(0, 5).map((row, i) => (
-                      <tr
-                        key={i}
-                        className="border-t dark:border-zinc-800"
-                      >
+                    {importableRows.slice(0, PREVIEW_LIMIT).map((row, i) => (
+                      <tr key={i} className="border-t dark:border-zinc-800">
                         {csvData.headers.map((header) => (
-                          <td key={header} className="px-3 py-2 truncate max-w-[150px]">
+                          <td
+                            key={header}
+                            className="px-3 py-2 truncate max-w-[150px]"
+                          >
                             {row[header]}
                           </td>
                         ))}
@@ -556,17 +598,22 @@ export const CSVImportModal = ({
                   </tbody>
                 </table>
               </div>
-              <p className="text-sm text-zinc-500 mt-2">
-                {csvData.rows.length} rows total
-              </p>
+              {importableRows.length - PREVIEW_LIMIT > 0 && (
+                <p className="text-sm text-zinc-500 mt-2">
+                  ...and {importableRows.length - PREVIEW_LIMIT} more
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setStep("upload")}>
                 Back
               </Button>
-              <Button onClick={handleImport} disabled={!canImport || importableRowCount === 0}>
-                Import {importableRowCount} rows
+              <Button
+                onClick={handleImport}
+                disabled={!canImport || importableRows.length === 0}
+              >
+                Import {importableRows.length} rows
               </Button>
             </div>
           </div>
@@ -598,14 +645,18 @@ export const CSVImportModal = ({
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {result.success}
                 </p>
-                <p className="text-sm text-green-700 dark:text-green-300">Created</p>
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  Created
+                </p>
               </div>
               <div className="p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg text-center">
                 <AlertCircle className="mx-auto h-8 w-8 text-yellow-600 dark:text-yellow-400 mb-2" />
                 <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                   {result.skipped}
                 </p>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">Updated</p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  Updated
+                </p>
               </div>
               <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg text-center">
                 <XCircle className="mx-auto h-8 w-8 text-red-600 dark:text-red-400 mb-2" />
@@ -643,5 +694,5 @@ export const CSVImportModal = ({
         )}
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};

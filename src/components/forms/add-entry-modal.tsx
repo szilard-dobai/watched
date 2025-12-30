@@ -427,6 +427,7 @@ export const AddEntryModal = ({
                               placeholder={
                                 isMovie ? "Same as start date" : "Pick end date"
                               }
+                              defaultMonth={startDate}
                             />
                           )}
                         />

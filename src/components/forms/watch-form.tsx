@@ -119,6 +119,7 @@ export const WatchForm = ({
                   date={field.value}
                   onDateChange={field.onChange}
                   placeholder={isMovie ? "Same as start" : "Pick date"}
+                  defaultMonth={startDate}
                 />
               )}
             />

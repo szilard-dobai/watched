@@ -1,69 +1,51 @@
 "use client"
 
-import { useState, useCallback, useSyncExternalStore } from "react"
-
-const getServerSnapshot = () => null
+import { useState, useCallback, useEffect } from "react"
 
 export const useLocalStorage = <T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((prev: T) => T)) => void] => {
-  const getSnapshot = useCallback(() => {
+  const [value, setValueState] = useState<T>(() => {
+    if (typeof window === "undefined") {
+      return initialValue
+    }
     try {
-      return window.localStorage.getItem(key)
+      const stored = window.localStorage.getItem(key)
+      return stored !== null ? (JSON.parse(stored) as T) : initialValue
     } catch {
-      return null
+      return initialValue
     }
-  }, [key])
-
-  const subscribe = useCallback(
-    (callback: () => void) => {
-      const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === key) {
-          callback()
-        }
-      }
-      window.addEventListener("storage", handleStorageChange)
-      return () => window.removeEventListener("storage", handleStorageChange)
-    },
-    [key]
-  )
-
-  const storedString = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
-
-  const [internalValue, setInternalValue] = useState<T>(() => {
-    if (storedString !== null) {
-      try {
-        return JSON.parse(storedString) as T
-      } catch {
-        return initialValue
-      }
-    }
-    return initialValue
   })
 
-  const parsedValue = storedString !== null ? (() => {
-    try {
-      return JSON.parse(storedString) as T
-    } catch {
-      return internalValue
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === key && e.newValue !== null) {
+        try {
+          setValueState(JSON.parse(e.newValue) as T)
+        } catch {
+          // Ignore parse errors
+        }
+      }
     }
-  })() : internalValue
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [key])
 
   const setValue = useCallback(
-    (value: T | ((prev: T) => T)) => {
-      setInternalValue((prev) => {
-        const newValue = value instanceof Function ? value(prev) : value
+    (newValue: T | ((prev: T) => T)) => {
+      setValueState((prev) => {
+        const resolved = newValue instanceof Function ? newValue(prev) : newValue
         try {
-          window.localStorage.setItem(key, JSON.stringify(newValue))
+          window.localStorage.setItem(key, JSON.stringify(resolved))
         } catch {
           console.warn(`Error setting localStorage key "${key}"`)
         }
-        return newValue
+        return resolved
       })
     },
     [key]
   )
 
-  return [parsedValue, setValue]
+  return [value, setValue]
 }

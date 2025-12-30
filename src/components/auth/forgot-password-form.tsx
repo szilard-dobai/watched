@@ -1,12 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { signIn } from "@/lib/auth-client"
-import { loginSchema, type LoginFormData } from "@/lib/schemas"
+import { requestPasswordReset } from "@/lib/auth-client"
+import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/schemas"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -18,36 +17,29 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const LoginForm = () => {
-  const router = useRouter()
+export const ForgotPasswordForm = () => {
   const [serverError, setServerError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
   })
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     setServerError("")
     setIsLoading(true)
 
     try {
-      const result = await signIn.email({
+      await requestPasswordReset({
         email: data.email,
-        password: data.password,
+        redirectTo: "/reset-password",
       })
-
-      if (result.error) {
-        setServerError(result.error.message ?? "Failed to sign in")
-        return
-      }
-
-      router.push("/")
-      router.refresh()
+      setIsSubmitted(true)
     } catch {
       setServerError("An unexpected error occurred")
     } finally {
@@ -55,12 +47,34 @@ export const LoginForm = () => {
     }
   }
 
+  if (isSubmitted) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Check Your Email</CardTitle>
+          <CardDescription>
+            If an account exists with this email, we&apos;ve sent password reset
+            instructions.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Link href="/login" className="w-full">
+            <Button variant="outline" className="w-full">
+              Back to Login
+            </Button>
+          </Link>
+        </CardFooter>
+      </Card>
+    )
+  }
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+        <CardTitle>Forgot Password</CardTitle>
         <CardDescription>
-          Enter your credentials to access your account
+          Enter your email address and we&apos;ll send you a link to reset your
+          password.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -87,42 +101,17 @@ export const LoginForm = () => {
               </p>
             )}
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-zinc-500 hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password")}
-              disabled={isLoading}
-            />
-            {errors.password && (
-              <p className="text-sm text-red-600 dark:text-red-400">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? "Sending..." : "Send Reset Link"}
           </Button>
-          <p className="text-sm text-zinc-500">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-zinc-900 underline dark:text-zinc-50">
-              Sign up
-            </Link>
-          </p>
+          <Link
+            href="/login"
+            className="text-sm text-zinc-500 hover:underline"
+          >
+            Back to Login
+          </Link>
         </CardFooter>
       </form>
     </Card>

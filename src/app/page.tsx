@@ -359,28 +359,33 @@ const Home = () => {
   const defaultListId = editableLists[0]?._id;
 
   const isLoading = isEntriesLoading || isListsLoading;
+  const canAddEntry = editableLists.length > 0;
   const hasMultipleLists = editableLists.length > 1;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <Header>
-        <Button
-          size="sm"
-          onClick={() => setIsAddEntryOpen(true)}
-          className="hidden lg:inline-flex"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Entry
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsImportModalOpen(true)}
-          className="hidden lg:inline-flex"
-        >
-          <Upload className="mr-2 h-4 w-4" />
-          Import
-        </Button>
+        {canAddEntry && (
+          <>
+            <Button
+              size="sm"
+              onClick={() => setIsAddEntryOpen(true)}
+              className="hidden lg:inline-flex"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Entry
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsImportModalOpen(true)}
+              className="hidden lg:inline-flex"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+          </>
+        )}
         {hasViewerLists && (
           <Link href="/shared">
             <Button variant="outline" size="sm">
@@ -1080,10 +1085,12 @@ const Home = () => {
         existingEntries={editableEntries}
       />
 
-      <MobileFab
-        onAddEntryClick={() => setIsAddEntryOpen(true)}
-        onImportClick={() => setIsImportModalOpen(true)}
-      />
+      {canAddEntry && (
+        <MobileFab
+          onAddEntryClick={() => setIsAddEntryOpen(true)}
+          onImportClick={() => setIsImportModalOpen(true)}
+        />
+      )}
     </div>
   );
 };

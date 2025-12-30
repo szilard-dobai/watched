@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
@@ -122,9 +122,21 @@ const Home = () => {
     DEFAULT_SORT
   );
 
+  const [searchInput, setSearchInput] = useState(filters.search);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        setFilters((f) => ({ ...f, search: searchInput }));
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput, filters.search, setFilters]);
+
   const handleResetFilters = () => {
     setFilters(DEFAULT_FILTERS);
     setSort(DEFAULT_SORT);
+    setSearchInput("");
   };
 
   const hasActiveFilters =
@@ -525,10 +537,8 @@ const Home = () => {
         <div className="mb-6 flex items-center gap-3">
           <Input
             placeholder="Search titles..."
-            value={filters.search}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, search: e.target.value }))
-            }
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="flex-1 sm:max-w-xs"
           />
           <Button

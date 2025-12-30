@@ -6,7 +6,7 @@ import { UserMenu } from "../auth/user-menu";
 const Header = ({ children }: PropsWithChildren) => {
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900">
             <Popcorn className="h-5 w-5 text-violet-600 dark:text-violet-400" />

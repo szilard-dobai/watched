@@ -292,7 +292,7 @@ const SharedPage = () => {
         </Link>
       </Header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Shared With Me</h1>
           <p className="text-sm text-zinc-500">

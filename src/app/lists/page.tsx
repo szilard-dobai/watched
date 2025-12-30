@@ -20,7 +20,7 @@ const ListsPage = () => {
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       <Header />
 
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Your Lists</h1>

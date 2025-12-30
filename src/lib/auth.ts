@@ -8,6 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins: process.env.TRUSTED_ORIGINS?.split(",") ?? [],
   database: mongodbAdapter(client.db(process.env.MONGODB_DB), { client }),
   emailAndPassword: {
     enabled: true,

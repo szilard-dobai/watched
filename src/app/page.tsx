@@ -1043,6 +1043,7 @@ const Home = () => {
           onOpenChange={(open) => !open && setEditingEntryId(null)}
           entry={editingEntry}
           listId={editingEntry.listId}
+          currentUserId={session?.user?.id}
           onAddWatch={(entryId, data) =>
             addWatch(editingEntry?.listId ?? "", entryId, data)
           }

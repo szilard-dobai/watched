@@ -87,6 +87,7 @@ export interface Entry {
   _id: string;
   listId: string;
   addedByUserId: string;
+  addedByUserName?: string;
   tmdbId: number;
   mediaType: MediaType;
   title: string;

@@ -54,9 +54,19 @@ vi.mock("@/lib/db/collections", () => ({
   getMembershipsCollection: vi.fn(),
   getEntriesCollection: vi.fn(),
   getListsCollection: vi.fn(),
+  getUserCollection: vi.fn(),
 }))
 
-import { getMembershipsCollection, getEntriesCollection, getListsCollection } from "@/lib/db/collections"
+import { getMembershipsCollection, getEntriesCollection, getListsCollection, getUserCollection } from "@/lib/db/collections"
+
+const mockUsers = [
+  { _id: new ObjectId(mockUserId), name: "Test User", email: "test@test.com" },
+  { _id: new ObjectId("507f1f77bcf86cd799439999"), name: "Other User", email: "other@test.com" },
+]
+
+const createMockUsersCollection = () => ({
+  find: vi.fn().mockReturnValue({ toArray: vi.fn().mockResolvedValue(mockUsers) }),
+})
 
 describe("/api/entries", () => {
   beforeEach(() => {
@@ -81,6 +91,7 @@ describe("/api/entries", () => {
       vi.mocked(getMembershipsCollection).mockResolvedValue(mockMembershipsCollection as never)
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
       vi.mocked(getListsCollection).mockResolvedValue(mockListsCollection as never)
+      vi.mocked(getUserCollection).mockResolvedValue(createMockUsersCollection() as never)
 
       const response = await GET()
       const data = await response.json()
@@ -111,6 +122,7 @@ describe("/api/entries", () => {
       vi.mocked(getMembershipsCollection).mockResolvedValue(mockMembershipsCollection as never)
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
       vi.mocked(getListsCollection).mockResolvedValue(mockListsCollection as never)
+      vi.mocked(getUserCollection).mockResolvedValue(createMockUsersCollection() as never)
 
       const response = await GET()
       const data = await response.json()
@@ -136,6 +148,7 @@ describe("/api/entries", () => {
       vi.mocked(getMembershipsCollection).mockResolvedValue(mockMembershipsCollection as never)
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
       vi.mocked(getListsCollection).mockResolvedValue(mockListsCollection as never)
+      vi.mocked(getUserCollection).mockResolvedValue(createMockUsersCollection() as never)
 
       const response = await GET()
       const data = await response.json()
@@ -160,6 +173,7 @@ describe("/api/entries", () => {
       vi.mocked(getMembershipsCollection).mockResolvedValue(mockMembershipsCollection as never)
       vi.mocked(getEntriesCollection).mockResolvedValue(mockEntriesCollection as never)
       vi.mocked(getListsCollection).mockResolvedValue(mockListsCollection as never)
+      vi.mocked(getUserCollection).mockResolvedValue(createMockUsersCollection() as never)
 
       const response = await GET()
       const data = await response.json()

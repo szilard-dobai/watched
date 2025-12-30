@@ -4,7 +4,9 @@ import {
   getMembershipsCollection,
   getEntriesCollection,
   getListsCollection,
+  getUserCollection,
 } from "@/lib/db/collections"
+import { ObjectId } from "mongodb"
 
 export const GET = async () => {
   try {
@@ -20,6 +22,8 @@ export const GET = async () => {
 
     const userLists = await lists.find({ _id: { $in: listIds } }).toArray()
     const listMap = new Map(userLists.map((l) => [l._id.toString(), l.name]))
+
+    const users = await getUserCollection()
 
     const allEntries = await entries
       .aggregate([
@@ -87,15 +91,34 @@ export const GET = async () => {
       ])
       .toArray()
 
+    const addedByUserIds = [
+      ...new Set(
+        allEntries.map(
+          (e) => (e as { addedByUserId: string }).addedByUserId
+        )
+      ),
+    ]
+    const validObjectIds = addedByUserIds
+      .filter((id) => ObjectId.isValid(id))
+      .map((id) => new ObjectId(id))
+    const entryUsers = validObjectIds.length > 0
+      ? await users.find({ _id: { $in: validObjectIds } }).toArray()
+      : []
+    const userMap = new Map(
+      entryUsers.map((u) => [u._id.toString(), u.name ?? "Unknown"])
+    )
+
     const entriesWithListInfo = allEntries.map((entry) => {
       const entryData = entry as {
         listId: string
+        addedByUserId: string
         watches?: { addedAt: string }[]
         createdAt: string
       }
       return {
         ...entry,
         listName: listMap.get(entryData.listId) ?? "Unknown List",
+        addedByUserName: userMap.get(entryData.addedByUserId) ?? "Unknown",
       }
     })
 

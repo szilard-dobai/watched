@@ -36,6 +36,7 @@ interface EditEntryModalProps {
   onOpenChange: (open: boolean) => void
   entry: Entry | null
   listId: string
+  currentUserId?: string
   onAddWatch: (entryId: string, data: WatchFormData) => Promise<boolean>
   onUpdateWatch: (
     entryId: string,
@@ -77,6 +78,7 @@ export const EditEntryModal = ({
   onOpenChange,
   entry,
   listId,
+  currentUserId,
   onAddWatch,
   onUpdateWatch,
   onDeleteWatch,
@@ -378,6 +380,13 @@ export const EditEntryModal = ({
                       ))}
                     </div>
                   )}
+                  {entry.addedByUserName &&
+                    currentUserId &&
+                    entry.addedByUserId !== currentUserId && (
+                      <p className="mt-2 text-sm text-zinc-500">
+                        Added by {entry.addedByUserName}
+                      </p>
+                    )}
                 </>
               )}
             </div>

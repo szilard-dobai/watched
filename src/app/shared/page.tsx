@@ -278,7 +278,7 @@ const SharedPage = () => {
   const hasMultipleLists = viewerLists.length > 1
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
       <Header>
         <Link href="/">
           <Button variant="outline" size="sm">
@@ -293,7 +293,7 @@ const SharedPage = () => {
         </Link>
       </Header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Shared With Me</h1>
           <p className="text-sm text-zinc-500">

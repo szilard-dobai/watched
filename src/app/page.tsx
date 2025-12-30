@@ -364,7 +364,7 @@ const Home = () => {
   const hasMultipleLists = editableLists.length > 1;
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
       <Header>
         {canAddEntry && (
           <>
@@ -403,7 +403,7 @@ const Home = () => {
         </Link>
       </Header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
         <div className="mb-6 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           <Card
             className={`cursor-pointer transition-all hover:shadow-md ${

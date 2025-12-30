@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Dialog,
@@ -53,6 +53,7 @@ type Step = "upload" | "mapping" | "importing" | "results";
 
 const MAPPING_OPTIONS = [
   { value: "_none", label: "(Don't import)" },
+  { value: "tmdbId", label: "TMDB ID" },
   { value: "title", label: "Title (required)" },
   { value: "mediaType", label: "Media Type" },
   { value: "status", label: "Status" },
@@ -81,6 +82,7 @@ export const CSVImportModal = ({
     rows: CSVRow[];
   } | null>(null);
   const [mapping, setMapping] = useState<CSVColumnMapping>({
+    tmdbId: null,
     title: null,
     mediaType: null,
     status: null,
@@ -101,12 +103,17 @@ export const CSVImportModal = ({
     skipped: 0,
     errors: [],
   });
+  const [wasCancelled, setWasCancelled] = useState(false);
+  const cancelledRef = useRef(false);
 
   const resetState = () => {
+    cancelledRef.current = false;
+    setWasCancelled(false);
     setStep("upload");
     setError(null);
     setCsvData(null);
     setMapping({
+      tmdbId: null,
       title: null,
       mediaType: null,
       status: null,
@@ -169,6 +176,8 @@ export const CSVImportModal = ({
   const handleImport = async () => {
     if (!csvData || !canImport) return;
 
+    cancelledRef.current = false;
+    setWasCancelled(false);
     setStep("importing");
     setImportProgress({ current: 0, total: csvData.rows.length });
 
@@ -180,6 +189,10 @@ export const CSVImportModal = ({
     };
 
     for (let i = 0; i < importableRows.length; i++) {
+      if (cancelledRef.current) {
+        break;
+      }
+
       const row = importableRows[i];
       setImportProgress({ current: i + 1, total: importableRows.length });
 
@@ -243,27 +256,36 @@ export const CSVImportModal = ({
         const entryStatus = inferStatus(parsed);
 
         try {
-          const searchResult = await tmdbApi.search(parsed.title);
-          const matchingResult =
-            searchResult.results.find(
-              (r) => r.media_type === parsed.mediaType
-            ) || searchResult.results[0];
+          let tmdbId: number | null = null;
+          let mediaType = parsed.mediaType;
 
-          if (matchingResult) {
-            const details = await tmdbApi.getDetails(
-              matchingResult.media_type,
-              matchingResult.id
-            );
+          if (parsed.tmdbId) {
+            tmdbId = parsed.tmdbId;
+          } else {
+            const searchResult = await tmdbApi.search(parsed.title);
+            const matchingResult =
+              searchResult.results.find(
+                (r) => r.media_type === parsed.mediaType
+              ) || searchResult.results[0];
+
+            if (matchingResult) {
+              tmdbId = matchingResult.id;
+              mediaType = matchingResult.media_type;
+            }
+          }
+
+          if (tmdbId) {
+            const details = await tmdbApi.getDetails(mediaType, tmdbId);
 
             const baseData = {
-              tmdbId: matchingResult.id,
-              mediaType: matchingResult.media_type,
+              tmdbId,
+              mediaType,
               title:
-                matchingResult.media_type === "movie"
+                mediaType === "movie"
                   ? (details as { title: string }).title
                   : (details as { name: string }).name,
               originalTitle:
-                matchingResult.media_type === "movie"
+                mediaType === "movie"
                   ? (details as { original_title: string }).original_title
                   : (details as { original_name: string }).original_name,
               overview: details.overview,
@@ -278,7 +300,7 @@ export const CSVImportModal = ({
               platform: parsed.platform || undefined,
               notes: parsed.notes || undefined,
               rating: parsed.rating || undefined,
-              ...(matchingResult.media_type === "movie"
+              ...(mediaType === "movie"
                 ? {
                     releaseDate: (details as { release_date: string })
                       .release_date,
@@ -438,12 +460,19 @@ export const CSVImportModal = ({
       }
     }
 
+    setWasCancelled(cancelledRef.current);
     setResult(importResult);
     setStep("results");
-    onImportComplete();
+    if (importResult.success > 0 || importResult.skipped > 0) {
+      onImportComplete();
+    }
   };
 
   const handleClose = () => {
+    if (step === "importing") {
+      cancelledRef.current = true;
+      return;
+    }
     resetState();
     onOpenChange(false);
   };
@@ -457,7 +486,8 @@ export const CSVImportModal = ({
             {step === "upload" && "Upload a CSV file to import entries"}
             {step === "mapping" && "Map CSV columns to entry fields"}
             {step === "importing" && "Importing entries..."}
-            {step === "results" && "Import complete"}
+            {step === "results" &&
+              (wasCancelled ? "Import cancelled" : "Import complete")}
           </DialogDescription>
         </DialogHeader>
 
@@ -636,6 +666,15 @@ export const CSVImportModal = ({
                 }}
               />
             </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                cancelledRef.current = true;
+              }}
+              className="mt-4"
+            >
+              Cancel Import
+            </Button>
           </div>
         )}
 

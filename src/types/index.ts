@@ -349,6 +349,7 @@ export interface CSVRow {
 }
 
 export interface CSVColumnMapping {
+  tmdbId: string | null;
   title: string | null;
   mediaType: string | null;
   status: string | null;
@@ -367,6 +368,7 @@ export interface CSVImportResult {
 }
 
 export interface ParsedCSVEntry {
+  tmdbId: number | null;
   title: string;
   mediaType: MediaType;
   status: EntryStatus | null;

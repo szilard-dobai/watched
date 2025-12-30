@@ -16,7 +16,9 @@ import { Input } from "@/components/ui/input";
 import { useListDetail } from "@/hooks/use-list-detail";
 import { useLists } from "@/hooks/use-lists";
 import { useSession } from "@/lib/auth-client";
-import { ArrowLeft, LogOut, Trash2 } from "lucide-react";
+import { entryApi } from "@/lib/api/fetchers";
+import { downloadCSV, entriesToCSV } from "@/lib/csv-export";
+import { ArrowLeft, Download, LogOut, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -34,8 +36,10 @@ const ListSettingsPage = () => {
   const [nameInitialized, setNameInitialized] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const isOwner = list?.role === "owner";
+  const canEdit = list?.role === "owner" || list?.role === "member";
 
   useEffect(() => {
     if (error) {
@@ -89,6 +93,22 @@ const ListSettingsPage = () => {
       router.push("/lists");
     }
     setIsLeaving(false);
+  };
+
+  const handleExport = async () => {
+    if (!list) return;
+
+    setIsExporting(true);
+    try {
+      const entries = await entryApi.getByList(listId);
+      const csv = entriesToCSV(entries);
+      const filename = `${list.name.replace(/[^a-z0-9]/gi, "_")}_export_${new Date().toISOString().split("T")[0]}.csv`;
+      downloadCSV(csv, filename);
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export entries. Please try again.");
+    }
+    setIsExporting(false);
   };
 
   return (
@@ -159,6 +179,27 @@ const ListSettingsPage = () => {
                     onRegenerate={handleRegenerateInvite}
                     showRegenerate
                   />
+                </CardContent>
+              </Card>
+            )}
+
+            {canEdit && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Export Data</CardTitle>
+                  <CardDescription>
+                    Download all entries and watch history as a CSV file
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant="outline"
+                    onClick={handleExport}
+                    disabled={isExporting}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    {isExporting ? "Exporting..." : "Export to CSV"}
+                  </Button>
                 </CardContent>
               </Card>
             )}

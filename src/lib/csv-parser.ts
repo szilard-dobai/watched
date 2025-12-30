@@ -95,6 +95,12 @@ export const normalizeRating = (value: string): UserRatingValue | null => {
   return null
 }
 
+export const parseTmdbId = (value: string): number | null => {
+  if (!value || !value.trim()) return null
+  const parsed = parseInt(value.trim(), 10)
+  return isNaN(parsed) || parsed <= 0 ? null : parsed
+}
+
 export const mapRowToEntry = (
   row: CSVRow,
   mapping: CSVColumnMapping
@@ -106,6 +112,9 @@ export const mapRowToEntry = (
 
   const title = getValue(mapping.title)
   if (!title) return null
+
+  const tmdbIdValue = getValue(mapping.tmdbId)
+  const tmdbId = parseTmdbId(tmdbIdValue)
 
   const mediaTypeValue = getValue(mapping.mediaType)
   const mediaType = normalizeMediaType(mediaTypeValue) || "movie"
@@ -123,6 +132,7 @@ export const mapRowToEntry = (
   const rating = normalizeRating(ratingValue)
 
   return {
+    tmdbId,
     title,
     mediaType,
     status,
@@ -142,6 +152,7 @@ export const inferStatus = (entry: ParsedCSVEntry): EntryStatus => {
   return "planned"
 }
 
+const COMMON_TMDB_ID_NAMES = ["tmdbid", "tmdb_id", "tmdb id", "tmdb"]
 const COMMON_TITLE_NAMES = ["title", "name", "movie", "show", "film"]
 const COMMON_TYPE_NAMES = ["type", "media type", "mediatype", "kind", "category"]
 const COMMON_STATUS_NAMES = ["status", "watch status", "state"]
@@ -162,6 +173,7 @@ export const autoDetectMapping = (headers: string[]): CSVColumnMapping => {
   }
 
   return {
+    tmdbId: findMatch(COMMON_TMDB_ID_NAMES),
     title: findMatch(COMMON_TITLE_NAMES),
     mediaType: findMatch(COMMON_TYPE_NAMES),
     status: findMatch(COMMON_STATUS_NAMES),

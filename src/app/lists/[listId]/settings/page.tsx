@@ -91,20 +91,6 @@ const ListSettingsPage = () => {
     setIsLeaving(false);
   };
 
-  if (isLoading) {
-    return (
-      <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <div className="mx-auto max-w-2xl px-4 py-8">
-          <p className="text-zinc-500">Loading...</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!list || !session) {
-    return null;
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
       <Header />
@@ -120,108 +106,114 @@ const ListSettingsPage = () => {
 
         <h1 className="mb-8 text-2xl font-bold">List Settings</h1>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>General</CardTitle>
-              <CardDescription>
-                {isOwner ? "Update your list name" : "View list details"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">
-                  List Name
-                </label>
-                {isOwner ? (
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{list.name}</p>
-                )}
-              </div>
-              {isOwner && (
-                <Button
-                  onClick={handleSave}
-                  disabled={isUpdating || !name.trim() || name === list.name}
-                >
-                  {isUpdating ? "Saving..." : "Save Changes"}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          {isOwner && (
+        {isLoading ? (
+          <p className="text-zinc-500">Loading...</p>
+        ) : !list || !session ? (
+          <p className="text-zinc-500">Error! Something went wrong...</p>
+        ) : (
+          <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Invite Link</CardTitle>
+                <CardTitle>General</CardTitle>
                 <CardDescription>
-                  Share this link to invite others to your list
+                  {isOwner ? "Update your list name" : "View list details"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium">
+                    List Name
+                  </label>
+                  {isOwner ? (
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  ) : (
+                    <p className="text-lg font-medium">{list.name}</p>
+                  )}
+                </div>
+                {isOwner && (
+                  <Button
+                    onClick={handleSave}
+                    disabled={isUpdating || !name.trim() || name === list.name}
+                  >
+                    {isUpdating ? "Saving..." : "Save Changes"}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {isOwner && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Invite Link</CardTitle>
+                  <CardDescription>
+                    Share this link to invite others to your list
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <InviteLink
+                    inviteCode={list.inviteCode}
+                    onRegenerate={handleRegenerateInvite}
+                    showRegenerate
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Members</CardTitle>
+                <CardDescription>
+                  {isOwner
+                    ? "Manage who has access to this list"
+                    : "View who has access to this list"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <InviteLink
-                  inviteCode={list.inviteCode}
-                  onRegenerate={handleRegenerateInvite}
-                  showRegenerate
+                <MemberList
+                  listId={listId}
+                  currentUserRole={list.role}
+                  currentUserId={session.user.id}
                 />
               </CardContent>
             </Card>
-          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Members</CardTitle>
-              <CardDescription>
-                {isOwner
-                  ? "Manage who has access to this list"
-                  : "View who has access to this list"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MemberList
-                listId={listId}
-                currentUserRole={list.role}
-                currentUserId={session.user.id}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-200 dark:border-red-900">
-            <CardHeader>
-              <CardTitle className="text-red-600">Danger Zone</CardTitle>
-              <CardDescription>
-                {isOwner
-                  ? "Permanently delete this list and all its entries"
-                  : "Leave this list and lose access to all entries"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isOwner ? (
-                <Button
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {isDeleting ? "Deleting..." : "Delete List"}
-                </Button>
-              ) : (
-                <Button
-                  variant="destructive"
-                  onClick={handleLeave}
-                  disabled={isLeaving}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {isLeaving ? "Leaving..." : "Leave List"}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="border-red-200 dark:border-red-900">
+              <CardHeader>
+                <CardTitle className="text-red-600">Danger Zone</CardTitle>
+                <CardDescription>
+                  {isOwner
+                    ? "Permanently delete this list and all its entries"
+                    : "Leave this list and lose access to all entries"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isOwner ? (
+                  <Button
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {isDeleting ? "Deleting..." : "Delete List"}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    onClick={handleLeave}
+                    disabled={isLeaving}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {isLeaving ? "Leaving..." : "Leave List"}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </main>
 
       <Footer />

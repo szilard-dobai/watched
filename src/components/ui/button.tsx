@@ -57,4 +57,19 @@ const Button = React.forwardRef<
 
 Button.displayName = "Button";
 
-export { Button, buttonVariants };
+const BaseButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<"button"> & VariantProps<typeof buttonVariants>
+>(({ className, variant, size, ...props }, ref) => {
+  return (
+    <button
+      className={cn(buttonVariants({ variant, size, className }))}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+
+BaseButton.displayName = "BaseButton";
+
+export { Button, BaseButton, buttonVariants };

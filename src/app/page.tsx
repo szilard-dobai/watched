@@ -20,6 +20,7 @@ import { useSession } from "@/lib/auth-client";
 import type {
   DashboardFilterState,
   DashboardSortState,
+  DateFilter,
   EntryFormData,
   EntryStatus,
   SortField,
@@ -58,11 +59,54 @@ const DEFAULT_FILTERS: DashboardFilterState = {
   status: "all",
   userRating: "all",
   ownerRating: "all",
+  startDate: null,
+  endDate: null,
 };
 
 const DEFAULT_SORT: DashboardSortState = {
   field: "date",
   direction: "desc",
+};
+
+const compareDateWithFilter = (
+  dateStr: string,
+  filter: DateFilter
+): boolean => {
+  const dateTime = new Date(dateStr).getTime();
+  const filterTime = new Date(filter.date).getTime();
+
+  switch (filter.operator) {
+    case ">=":
+      return dateTime >= filterTime;
+    case "<=":
+      return dateTime <= filterTime;
+    case "=":
+      return dateStr.slice(0, 10) === filter.date.slice(0, 10);
+    case ">":
+      return dateTime > filterTime;
+    case "<":
+      return dateTime < filterTime;
+    default:
+      return true;
+  }
+};
+
+const entryMatchesDateFilters = (
+  entry: { watches: Array<{ startDate?: string; endDate?: string }> },
+  startDateFilter: DateFilter | null,
+  endDateFilter: DateFilter | null
+): boolean => {
+  if (!startDateFilter && !endDateFilter) return true;
+
+  if (entry.watches.length === 0) return false;
+
+  return entry.watches.some((watch) => {
+    const startMatches = !startDateFilter ||
+      (watch.startDate && compareDateWithFilter(watch.startDate, startDateFilter));
+    const endMatches = !endDateFilter ||
+      (watch.endDate && compareDateWithFilter(watch.endDate, endDateFilter));
+    return startMatches && endMatches;
+  });
 };
 
 const Home = () => {
@@ -148,6 +192,8 @@ const Home = () => {
     filters.status !== "all" ||
     filters.userRating !== "all" ||
     filters.ownerRating !== "all" ||
+    filters.startDate !== null ||
+    filters.endDate !== null ||
     sort.field !== "date" ||
     sort.direction !== "desc";
 
@@ -160,6 +206,8 @@ const Home = () => {
     filters.status !== "all",
     filters.userRating !== "all",
     filters.ownerRating !== "all",
+    filters.startDate !== null,
+    filters.endDate !== null,
   ].filter(Boolean).length;
 
   const allGenres = useMemo(() => {
@@ -170,20 +218,75 @@ const Home = () => {
     return Array.from(genreSet).sort();
   }, [editableEntries]);
 
+  const filteredEntriesWithoutMediaTypeAndStatus = useMemo(() => {
+    const getEntryPlatform = (entry: (typeof editableEntries)[0]) =>
+      entry.lastPlatform || entry.platform || null;
+
+    return editableEntries.filter((entry) => {
+      if (
+        filters.search &&
+        !entry.title.toLowerCase().includes(filters.search.toLowerCase())
+      ) {
+        return false;
+      }
+      if (filters.listId !== "all" && entry.listId !== filters.listId) {
+        return false;
+      }
+      if (
+        filters.genre !== "all" &&
+        !entry.genres?.some((g) => g.name === filters.genre)
+      ) {
+        return false;
+      }
+      if (filters.platform !== "all") {
+        const entryPlatform = getEntryPlatform(entry);
+        if (entryPlatform !== filters.platform) return false;
+      }
+      if (filters.userRating !== "all") {
+        if (filters.userRating === "none") {
+          if (entry.userRating) return false;
+        } else {
+          if (entry.userRating !== filters.userRating) return false;
+        }
+      }
+      if (filters.ownerRating !== "all") {
+        if (filters.ownerRating === "none") {
+          if (entry.ownerRating) return false;
+        } else {
+          if (entry.ownerRating !== filters.ownerRating) return false;
+        }
+      }
+      if (!entryMatchesDateFilters(entry, filters.startDate, filters.endDate)) {
+        return false;
+      }
+      return true;
+    });
+  }, [editableEntries, filters.search, filters.listId, filters.genre, filters.platform, filters.userRating, filters.ownerRating, filters.startDate, filters.endDate]);
+
   const stats = useMemo(() => {
-    const totalMovies = editableEntries.filter(
+    const baseEntries = filteredEntriesWithoutMediaTypeAndStatus;
+
+    const entriesForMediaType = filters.status === "all"
+      ? baseEntries
+      : baseEntries.filter((e) => e.entryStatus === filters.status);
+
+    const entriesForStatus = filters.mediaType === "all"
+      ? baseEntries
+      : baseEntries.filter((e) => e.mediaType === filters.mediaType);
+
+    const totalMovies = entriesForMediaType.filter(
       (e) => e.mediaType === "movie"
     ).length;
-    const totalTvShows = editableEntries.filter(
+    const totalTvShows = entriesForMediaType.filter(
       (e) => e.mediaType === "tv"
     ).length;
-    const planned = editableEntries.filter(
+    const planned = entriesForStatus.filter(
       (e) => e.entryStatus === "planned"
     ).length;
-    const watching = editableEntries.filter(
+    const watching = entriesForStatus.filter(
       (e) => e.entryStatus === "in_progress"
     ).length;
-    const finished = editableEntries.filter(
+    const finished = entriesForStatus.filter(
       (e) => e.entryStatus === "finished"
     ).length;
 
@@ -194,7 +297,7 @@ const Home = () => {
       watching,
       finished,
     };
-  }, [editableEntries]);
+  }, [filteredEntriesWithoutMediaTypeAndStatus, filters.status, filters.mediaType]);
 
   const filteredAndSortedEntries = useMemo(() => {
     const getEntryPlatform = (entry: (typeof editableEntries)[0]) =>
@@ -254,6 +357,9 @@ const Home = () => {
         } else {
           if (entry.ownerRating !== filters.ownerRating) return false;
         }
+      }
+      if (!entryMatchesDateFilters(entry, filters.startDate, filters.endDate)) {
+        return false;
       }
       return true;
     });

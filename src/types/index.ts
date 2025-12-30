@@ -228,6 +228,13 @@ export type SortField =
 
 export type SortDirection = "asc" | "desc";
 
+export type DateFilterOperator = ">=" | "<=" | "=" | ">" | "<";
+
+export interface DateFilter {
+  operator: DateFilterOperator;
+  date: string;
+}
+
 export interface DashboardFilterState {
   search: string;
   listId: string | "all";
@@ -237,6 +244,8 @@ export interface DashboardFilterState {
   status: EntryStatus | "all";
   userRating: UserRatingValue | "none" | "all";
   ownerRating: UserRatingValue | "none" | "all";
+  startDate: DateFilter | null;
+  endDate: DateFilter | null;
 }
 
 export interface DashboardSortState {

@@ -314,7 +314,7 @@ export const AddEntryModal = ({
                           href={`https://www.imdb.com/title/${movieDetails.imdb_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                          className="mt-2 flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                         >
                           <ExternalLink className="h-3 w-3" />
                           Open on IMDB

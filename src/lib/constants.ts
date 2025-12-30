@@ -73,3 +73,11 @@ export const USER_RATING_FILTER_OPTIONS = [
   { value: "disliked", label: "Disliked" },
   { value: "none", label: "Not Rated" },
 ] as const
+
+export const DATE_FILTER_OPERATORS = [
+  { value: ">=", label: "On or after" },
+  { value: "<=", label: "On or before" },
+  { value: "=", label: "Exactly on" },
+  { value: ">", label: "After" },
+  { value: "<", label: "Before" },
+] as const

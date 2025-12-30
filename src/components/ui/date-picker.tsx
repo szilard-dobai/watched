@@ -25,8 +25,15 @@ const DatePicker = ({
   disabled,
   defaultMonth,
 }: DatePickerProps) => {
+  const [open, setOpen] = React.useState(false);
+
+  const handleSelect = (selectedDate: Date | undefined) => {
+    onDateChange?.(selectedDate);
+    setOpen(false);
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -41,12 +48,15 @@ const DatePicker = ({
           {date ? format(date, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-1" align="start">
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={onDateChange}
+          onSelect={handleSelect}
           defaultMonth={date ?? defaultMonth}
+          captionLayout="dropdown"
+          startMonth={new Date(1990, 0)}
+          endMonth={new Date(2035, 11)}
           initialFocus
         />
       </PopoverContent>

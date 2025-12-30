@@ -14,8 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Watch Tracker",
-  description: "Track your movies and TV shows",
+  title: {
+    default: "Watched",
+    template: "%s | Watched",
+  },
+  description: "Track movies and TV shows you're watching together",
 };
 
 const RootLayout = ({

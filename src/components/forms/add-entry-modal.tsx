@@ -34,6 +34,7 @@ import type {
 } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
+import { ExternalLink } from "lucide-react"
 import Image from "next/image"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Controller, useForm, useWatch } from "react-hook-form"
@@ -308,6 +309,17 @@ export const AddEntryModal = ({
                           </Badge>
                         ))}
                       </div>
+                      {isMovie && movieDetails?.imdb_id && (
+                        <a
+                          href={`https://www.imdb.com/title/${movieDetails.imdb_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Open on IMDB
+                        </a>
+                      )}
                     </>
                   ) : null}
                   <Button

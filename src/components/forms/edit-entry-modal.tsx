@@ -22,7 +22,7 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { PLATFORMS } from "@/lib/constants"
 import type { Entry, TMDBSearchResult, UserRatingValue, Watch } from "@/types"
 import { format } from "date-fns"
-import { Film, Pencil, Plus, RefreshCw, Star, Trash2, Tv } from "lucide-react"
+import { ExternalLink, Film, Pencil, Plus, RefreshCw, Star, Trash2, Tv } from "lucide-react"
 import Image from "next/image"
 import { useRef, useState } from "react"
 import { WatchForm } from "./watch-form"
@@ -387,6 +387,17 @@ export const EditEntryModal = ({
                         Added by {entry.addedByUserName}
                       </p>
                     )}
+                  {entry.imdbId && (
+                    <a
+                      href={`https://www.imdb.com/title/${entry.imdbId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Open on IMDB
+                    </a>
+                  )}
                 </>
               )}
             </div>

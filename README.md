@@ -5,12 +5,15 @@ Movie and TV show tracking app for personal use. Track what you've watched, shar
 ## Features
 
 - **User authentication** - Email/password authentication via Better Auth
-- **Shared lists** - Create or join lists via invite links with role-based permissions
+- **Shared lists** - Create or join lists via invite links with role-based permissions (owner, member, viewer)
 - **TMDB integration** - Search and add movies/TV shows with full metadata (posters, genres, ratings, etc.)
 - **Watch history** - Track multiple viewings with dates, platforms, and notes
 - **User ratings** - Rate entries as "disliked", "liked", or "loved"
-- **Dashboard** - View all entries across lists with filtering by list, genre, platform, and media type
-- **Gallery & list views** - Toggle between visual poster grid and detailed list view
+- **Dashboard** - View all entries across lists with advanced filtering and sorting
+- **Multiple view modes** - Gallery (poster grid), list (detailed), and table (spreadsheet) views
+- **CSV import/export** - Import from and export to CSV with smart duplicate handling
+- **Viewer mode** - Share lists with read-only access, viewers can copy entries to their own lists
+- **Dark mode** - System-aware theme switching
 
 ## Tech Stack
 
@@ -50,29 +53,34 @@ src/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API routes
 │   │   ├── auth/          # Better Auth handler
-│   │   ├── entries/       # Global entries endpoint
+│   │   ├── entries/       # Global entries + shared entries endpoints
 │   │   ├── lists/         # List CRUD + members + join/leave
 │   │   └── tmdb/          # TMDB search and details proxy
 │   ├── page.tsx           # Dashboard (home)
+│   ├── shared/            # Viewer entries page
 │   ├── login/             # Login page
 │   ├── register/          # Registration page
-│   ├── lists/             # Lists management page
+│   ├── lists/             # Lists management + settings pages
 │   └── join/[inviteCode]/ # Join list via invite
 ├── components/
 │   ├── ui/                # Reusable UI components (Button, Dialog, Select, etc.)
-│   ├── forms/             # Form components (AddEntryModal, EditEntryModal, etc.)
+│   ├── forms/             # Form components (AddEntryModal, EditEntryModal, CSVImportModal, etc.)
 │   ├── lists/             # List-related components
 │   └── auth/              # Auth forms and user menu
-├── hooks/                 # Custom React hooks (useLists, useEntries, etc.)
+├── hooks/                 # Custom React hooks (useLists, useEntries, useLocalStorage, etc.)
 ├── lib/
 │   ├── auth.ts            # Better Auth server config
 │   ├── auth-client.ts     # Better Auth client
 │   ├── schemas.ts         # Zod validation schemas
 │   ├── constants.ts       # App constants
+│   ├── csv-parser.ts      # CSV import parsing utilities
+│   ├── csv-export.ts      # CSV export utilities
+│   ├── entry-meta.ts      # Entry metadata computation
+│   ├── query-keys.ts      # React Query key factory
 │   ├── db/                # MongoDB connection and collections
 │   └── api/               # API helpers and fetchers
 ├── types/                 # TypeScript type definitions
-├── providers/             # React Query provider
+├── providers/             # React Query and Theme providers
 └── test/                  # Test setup and mocks
 ```
 
@@ -81,7 +89,7 @@ src/
 ### Lists
 - Created by a user (owner)
 - Shareable via invite link
-- Two roles: `owner` (full control) and `member` (own entries only)
+- Three roles: `owner` (full control), `member` (own entries only), `viewer` (read-only)
 
 ### Entries
 - Bound to a list
@@ -94,7 +102,7 @@ src/
 ### Watches
 - Embedded in entries as an array
 - Records each viewing with:
-  - `startDate` (required)
+  - `startDate` (required for non-planned)
   - `endDate` (optional, defaults to start date for movies)
   - `platform` (optional)
   - `notes` (optional)
@@ -114,12 +122,13 @@ src/
 - `GET /api/lists` - Get user's lists
 - `POST /api/lists` - Create list
 - `GET/PATCH/DELETE /api/lists/[listId]` - List operations
-- `GET/DELETE /api/lists/[listId]/members` - Member management
+- `GET/PATCH/DELETE /api/lists/[listId]/members` - Member management
 - `GET/POST /api/lists/join` - Join via invite code
 - `POST /api/lists/[listId]/leave` - Leave list
 
 ### Entries
 - `GET /api/entries` - All entries across all lists
+- `GET /api/entries/shared` - Entries from viewer-only lists
 - `GET/POST /api/lists/[listId]/entries` - List entries
 - `GET/PATCH/DELETE /api/lists/[listId]/entries/[entryId]` - Entry operations
 - `PUT /api/lists/[listId]/entries/[entryId]/rating` - Update rating

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Movie and TV show tracking app for personal use. Users can log watched content, track progress through lists, and get metadata from TMDB. Supports shared lists with role-based permissions.
+Movie and TV show tracking app for personal use. Users can log watched content, track progress through shared lists, and get metadata from TMDB. Features role-based permissions with three roles: owner (full control), member (own entries only), and viewer (read-only with copy functionality).
 
 ## Commands
 
@@ -25,7 +25,7 @@ Next.js 16 App Router with React 19, deployed on Vercel.
 
 **Data & API:**
 
-- MongoDB Atlas for data storage (5 collections: lists, listMemberships, entries, media, user)
+- MongoDB Atlas for data storage (6 collections: lists, listMemberships, entries, media, user, session)
 - TMDB API for movie/TV show metadata
 - Better Auth for session-based authentication (7-day expiration)
 
@@ -34,12 +34,13 @@ Next.js 16 App Router with React 19, deployed on Vercel.
 - TanStack React Query for server state and caching
 - React Hook Form + Zod for form validation
 - Query keys defined in `src/lib/query-keys.ts`
+- `useLocalStorage` hook for persisting user preferences (view mode, sorting, filters)
 
 **UI Stack:**
 
 - Tailwind CSS 4 for utility styling
 - Radix UI for accessible primitives (Dialog, Select, Popover, etc.)
-- MUI + Emotion for complex components
+- MUI + Emotion for complex components (DataGrid for table view)
 - Lucide React for icons
 - date-fns for date formatting
 
@@ -57,37 +58,48 @@ Next.js 16 App Router with React 19, deployed on Vercel.
 - Always use arrow functions, never function declarations
 - No comments in code unless absolutely necessary (code should be self-documenting)
 - Use `useWatch` from react-hook-form instead of `watch()` for React Compiler compatibility
+- Derive state from React Query cache when possible to avoid stale data
 
 ## Project Structure
 
 ```
 src/
-├── app/api/                    # API routes
-│   ├── auth/[...all]/         # Better Auth handler
-│   ├── entries/               # Global entries (all lists)
-│   ├── lists/                 # List CRUD
-│   │   ├── [listId]/entries/  # Entries per list
-│   │   │   └── [entryId]/     # Entry operations + watches + rating
-│   │   ├── [listId]/members/  # Member management
-│   │   ├── [listId]/leave/    # Leave list
-│   │   └── join/              # Join via invite
-│   └── tmdb/                  # TMDB proxy (search, details)
+├── app/
+│   ├── api/                    # API routes
+│   │   ├── auth/[...all]/     # Better Auth handler
+│   │   ├── entries/           # Global entries + /shared endpoint
+│   │   ├── lists/             # List CRUD
+│   │   │   ├── [listId]/entries/  # Entries per list
+│   │   │   │   └── [entryId]/     # Entry operations + watches + rating
+│   │   │   ├── [listId]/members/  # Member management
+│   │   │   ├── [listId]/leave/    # Leave list
+│   │   │   └── join/              # Join via invite
+│   │   └── tmdb/              # TMDB proxy (search, details)
+│   ├── page.tsx               # Dashboard (owner/member entries)
+│   ├── shared/page.tsx        # Viewer entries page
+│   ├── lists/                 # Lists management + settings
+│   ├── login/, register/      # Auth pages
+│   └── join/[inviteCode]/     # Join list via invite
 ├── components/
 │   ├── ui/                    # Reusable primitives (Button, Dialog, Select, etc.)
-│   ├── forms/                 # Form components (AddEntryModal, EditEntryModal, WatchForm)
+│   ├── forms/                 # Modals (AddEntry, EditEntry, CSVImport, ViewerEntry)
 │   ├── lists/                 # List management components
 │   └── auth/                  # Login/register forms, user menu
-├── hooks/                     # Custom hooks (useLists, useEntries, useAllEntries, etc.)
+├── hooks/                     # Custom hooks (useLists, useEntries, useSharedEntries, etc.)
 ├── lib/
 │   ├── auth.ts               # Better Auth server config
 │   ├── auth-client.ts        # Better Auth client exports
 │   ├── schemas.ts            # Zod validation schemas
-│   ├── constants.ts          # App constants (platforms, genres, status options)
+│   ├── constants.ts          # App constants (platforms, genres, status, sort options)
 │   ├── query-keys.ts         # React Query key factory
+│   ├── csv-parser.ts         # CSV import with TMDB lookup
+│   ├── csv-export.ts         # CSV export utilities
+│   ├── entry-meta.ts         # Entry metadata computation
+│   ├── utils.ts              # General utilities (cn, date formatting)
 │   ├── db/                   # MongoDB connection and collection helpers
 │   └── api/                  # API helpers and client fetchers
 ├── types/index.ts            # All TypeScript types
-├── providers/                # React Query provider
+├── providers/                # React Query and Theme providers
 ├── test/                     # Test setup and MSW mocks
 └── middleware.ts             # Auth middleware
 ```
@@ -99,11 +111,12 @@ src/
 - `EntryStatus`: "planned" | "in_progress" | "finished"
 - `WatchStatus`: "in_progress" | "finished"
 - `UserRatingValue`: "disliked" | "liked" | "loved"
-- `ListRole`: "owner" | "member"
+- `ListRole`: "owner" | "member" | "viewer"
 
 **Key interfaces:**
-- `Entry` - Denormalized entry with media fields flattened
+- `Entry` - Denormalized entry with media fields flattened and computed metadata
 - `DbEntry` - Raw database entry with mediaId reference
+- `ViewerEntry` - Sanitized entry for viewers (no watch details)
 - `Watch` - Individual watch record (embedded in entry)
 - `List` - List with role and member count
 - `EntryFormData` - Discriminated union based on watchStatus
@@ -116,6 +129,8 @@ Store in `.env.local` (gitignored):
 MONGODB_URI=<MongoDB connection string>
 MONGODB_DB=<Database name>
 TMDB_API_KEY=<TMDB API key>
+BETTER_AUTH_SECRET=<Auth secret>
+BETTER_AUTH_URL=<Base URL>
 ```
 
 ## Workflow Rules
@@ -143,7 +158,7 @@ TMDB_API_KEY=<TMDB API key>
 ## Database Collections
 
 1. **lists** - List documents (name, ownerId, inviteCode)
-2. **listMemberships** - User-list relationships with role
+2. **listMemberships** - User-list relationships with role (owner/member/viewer)
 3. **entries** - Entry documents with embedded watches array
 4. **media** - TMDB metadata cache (shared across entries)
 5. **user** - Better Auth user collection
@@ -154,5 +169,26 @@ TMDB_API_KEY=<TMDB API key>
 All API routes (except auth) require authentication via `requireAuth()` helper from `src/lib/api/auth-helpers.ts`. This validates the session and returns the user ID.
 
 Authorization is role-based per list:
-- `owner` - Full control (edit list, remove members, delete any entry)
-- `member` - Can only edit/delete their own entries
+- `owner` - Full control (edit list, manage members, delete any entry)
+- `member` - Can add entries, edit/delete only their own entries
+- `viewer` - Read-only access, can copy entries to their own lists
+
+## Key Features Implementation
+
+**View Modes (Gallery, List, Table):**
+- Persisted via `useLocalStorage` hook
+- Gallery: poster grid with quick actions
+- List: detailed cards with full metadata
+- Table: MUI DataGrid with sortable columns
+
+**CSV Import/Export:**
+- Import parses CSV and looks up TMDB by title + optional TMDB ID
+- Supports cancellation during import via ref-based flag
+- Export includes all entry data in standardized format
+- Smart duplicate handling on import
+
+**Viewer Dashboard Separation:**
+- Main dashboard (`/`) shows owner/member entries with full functionality
+- Shared page (`/shared`) shows viewer entries with limited data (no watch details)
+- `/api/entries/shared` endpoint returns sanitized ViewerEntry type
+- ViewerEntryModal allows copying entries to user's own lists

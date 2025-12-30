@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Footer } from "@/components/ui/footer";
 import Header from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { useListDetail } from "@/hooks/use-list-detail";
@@ -92,7 +93,7 @@ const ListSettingsPage = () => {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
         <div className="mx-auto max-w-2xl px-4 py-8">
           <p className="text-zinc-500">Loading...</p>
         </div>
@@ -105,10 +106,10 @@ const ListSettingsPage = () => {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
       <Header />
 
-      <div className="mx-auto max-w-2xl px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <Link
           href="/lists"
           className="mb-6 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
@@ -221,8 +222,10 @@ const ListSettingsPage = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </main>
+      </main>
+
+      <Footer />
+    </div>
   );
 };
 

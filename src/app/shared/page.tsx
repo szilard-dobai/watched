@@ -5,6 +5,7 @@ import { ViewerEntryModal } from "@/components/forms/viewer-entry-modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Footer } from "@/components/ui/footer"
 import Header from "@/components/ui/header"
 import { Input } from "@/components/ui/input"
 import { RatingInput } from "@/components/ui/rating-input"
@@ -844,6 +845,8 @@ const SharedPage = () => {
         defaultListId={editableLists[0]?._id}
         preSelectedResult={preSelectedResult}
       />
+
+      <Footer />
     </div>
   )
 }

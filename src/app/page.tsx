@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FilterModal } from "@/components/ui/filter-modal";
+import { Footer } from "@/components/ui/footer";
 import Header from "@/components/ui/header";
 import { MobileFab } from "@/components/mobile-fab";
 import { Input } from "@/components/ui/input";
@@ -1091,6 +1092,8 @@ const Home = () => {
           onImportClick={() => setIsImportModalOpen(true)}
         />
       )}
+
+      <Footer />
     </div>
   );
 };

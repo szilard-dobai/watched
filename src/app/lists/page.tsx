@@ -3,6 +3,7 @@
 import { CreateListModal } from "@/components/lists/create-list-modal";
 import { ListCard } from "@/components/lists/list-card";
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/ui/footer";
 import Header from "@/components/ui/header";
 import { useLists } from "@/hooks/use-lists";
 import { Plus } from "lucide-react";
@@ -17,10 +18,10 @@ const ListsPage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Your Lists</h1>
@@ -56,14 +57,16 @@ const ListsPage = () => {
             ))}
           </div>
         )}
-      </div>
+      </main>
 
       <CreateListModal
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onSubmit={handleCreateList}
       />
-    </main>
+
+      <Footer />
+    </div>
   );
 };
 

@@ -67,6 +67,7 @@
     "jsdom": "^27.4.0",
     "msw": "^2.12.4",
     "prettier": "^3.7.4",
+    "pwa-asset-generator": "^8.1.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.0.16"

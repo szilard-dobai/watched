@@ -94,7 +94,7 @@ src/
 ### Entries
 - Bound to a list
 - References cached media metadata
-- Tracks who added it and when
+- Tracks who added it and when (`createdAt`) and last modified (`updatedAt`)
 - Status: `planned`, `in_progress`, or `finished`
 - Optional user rating: `disliked`, `liked`, or `loved`
 - Optional platform (e.g., Netflix, Disney+, Cinema)

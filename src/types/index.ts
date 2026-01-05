@@ -224,7 +224,8 @@ export type SortField =
   | "userRating"
   | "ownerRating"
   | "watchCount"
-  | "createdAt";
+  | "createdAt"
+  | "updatedAt";
 
 export type SortDirection = "asc" | "desc";
 
@@ -406,6 +407,7 @@ export interface ViewerEntry {
   networks?: Network[];
   ownerRating?: UserRatingValue | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type ViewerSortField =
@@ -413,7 +415,8 @@ export type ViewerSortField =
   | "listName"
   | "voteAverage"
   | "ownerRating"
-  | "createdAt";
+  | "createdAt"
+  | "updatedAt";
 
 export interface ViewerFilterState {
   search: string;

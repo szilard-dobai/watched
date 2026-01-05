@@ -47,6 +47,7 @@ export const GET = async () => {
             listId: { $toString: "$listId" },
             ownerRating: 1,
             createdAt: 1,
+            updatedAt: 1,
             tmdbId: "$media.tmdbId",
             mediaType: "$media.mediaType",
             title: "$media.title",

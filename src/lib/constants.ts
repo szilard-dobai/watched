@@ -64,6 +64,7 @@ export const SORT_OPTIONS = [
   { value: "ownerRating", label: "Owner Rating" },
   { value: "watchCount", label: "Watch Count" },
   { value: "createdAt", label: "Date Added" },
+  { value: "updatedAt", label: "Date Updated" },
 ] as const
 
 export const USER_RATING_FILTER_OPTIONS = [

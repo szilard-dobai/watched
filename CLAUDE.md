@@ -114,12 +114,15 @@ src/
 - `ListRole`: "owner" | "member" | "viewer"
 
 **Key interfaces:**
-- `Entry` - Denormalized entry with media fields flattened and computed metadata
+- `Entry` - Denormalized entry with media fields flattened and computed metadata (includes `createdAt` and `updatedAt` timestamps)
 - `DbEntry` - Raw database entry with mediaId reference
-- `ViewerEntry` - Sanitized entry for viewers (no watch details)
+- `ViewerEntry` - Sanitized entry for viewers (no watch details, includes `createdAt` and `updatedAt`)
 - `Watch` - Individual watch record (embedded in entry)
 - `List` - List with role and member count
 - `EntryFormData` - Discriminated union based on watchStatus
+
+**Timestamp behavior:**
+- `updatedAt` is automatically updated when an entry is modified or when watches are created/updated/deleted
 
 ## Environment Variables
 

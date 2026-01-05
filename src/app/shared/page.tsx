@@ -70,6 +70,7 @@ const VIEWER_SORT_OPTIONS = [
   { value: "voteAverage", label: "TMDB Rating" },
   { value: "ownerRating", label: "Owner Rating" },
   { value: "createdAt", label: "Date Added" },
+  { value: "updatedAt", label: "Date Updated" },
 ] as const
 
 const SharedPage = () => {
@@ -215,6 +216,9 @@ const SharedPage = () => {
 
         case "createdAt":
           return dir * a.createdAt.localeCompare(b.createdAt)
+
+        case "updatedAt":
+          return dir * a.updatedAt.localeCompare(b.updatedAt)
 
         default:
           return 0
@@ -558,6 +562,14 @@ const SharedPage = () => {
                   </th>
                   <th
                     className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
+                    onClick={() => handleTableSort("updatedAt")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Updated {renderSortIcon("updatedAt")}
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 select-none"
                     onClick={() => handleTableSort("ownerRating")}
                   >
                     <span className="inline-flex items-center gap-1 text-nowrap">
@@ -632,6 +644,9 @@ const SharedPage = () => {
                     </td>
                     <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
                       {formatDate(entry.createdAt)}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                      {formatDate(entry.updatedAt)}
                     </td>
                     <td className="px-3 py-2">
                       {entry.ownerRating ? (

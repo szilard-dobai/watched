@@ -34,12 +34,13 @@ export const useAllEntries = () => {
       watchData: WatchFormData
     }) => entryApi.addWatch(listId, entryId, watchData),
     onSuccess: (newWatch, { entryId }) => {
+      const now = new Date().toISOString()
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
         old?.map((e) => {
           if (e._id !== entryId) return e
           const updatedWatches = [...e.watches, newWatch]
           const meta = computeEntryMeta(updatedWatches as DbWatch[])
-          return { ...e, watches: updatedWatches, ...meta }
+          return { ...e, watches: updatedWatches, ...meta, updatedAt: now }
         }) ?? []
       )
     },
@@ -58,6 +59,7 @@ export const useAllEntries = () => {
       watchData: WatchFormData
     }) => entryApi.updateWatch(listId, entryId, watchId, watchData),
     onSuccess: (_, { entryId, watchId, watchData }) => {
+      const now = new Date().toISOString()
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
         old?.map((e) => {
           if (e._id !== entryId) return e
@@ -65,7 +67,7 @@ export const useAllEntries = () => {
             w._id === watchId ? { ...w, ...watchData } : w
           )
           const meta = computeEntryMeta(updatedWatches as DbWatch[])
-          return { ...e, watches: updatedWatches, ...meta }
+          return { ...e, watches: updatedWatches, ...meta, updatedAt: now }
         }) ?? []
       )
     },
@@ -82,12 +84,13 @@ export const useAllEntries = () => {
       watchId: string
     }) => entryApi.deleteWatch(listId, entryId, watchId),
     onSuccess: (_, { entryId, watchId }) => {
+      const now = new Date().toISOString()
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
         old?.map((e) => {
           if (e._id !== entryId) return e
           const updatedWatches = e.watches.filter((w) => w._id !== watchId)
           const meta = computeEntryMeta(updatedWatches as DbWatch[])
-          return { ...e, watches: updatedWatches, ...meta }
+          return { ...e, watches: updatedWatches, ...meta, updatedAt: now }
         }) ?? []
       )
     },
@@ -114,8 +117,11 @@ export const useAllEntries = () => {
       platform: string
     }) => entryApi.update(listId, entryId, { platform }),
     onSuccess: (_, { entryId, platform }) => {
+      const now = new Date().toISOString()
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
-        old?.map((e) => (e._id === entryId ? { ...e, platform } : e)) ?? []
+        old?.map((e) =>
+          e._id === entryId ? { ...e, platform, updatedAt: now } : e
+        ) ?? []
       )
     },
   })
@@ -131,6 +137,7 @@ export const useAllEntries = () => {
       rating: UserRatingValue | null
     }) => entryApi.updateRating(listId, entryId, rating),
     onSuccess: (updatedEntry, { entryId }) => {
+      const now = new Date().toISOString()
       queryClient.setQueryData<EntryWithList[]>(queryKeys.entries.all, (old) =>
         old?.map((e) =>
           e._id === entryId
@@ -138,6 +145,7 @@ export const useAllEntries = () => {
                 ...e,
                 userRating: updatedEntry.userRating,
                 ownerRating: updatedEntry.ownerRating,
+                updatedAt: now,
               }
             : e
         ) ?? []

@@ -52,13 +52,16 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
     const { status, startDate, endDate, platform, notes } = await request.json()
     const now = new Date().toISOString()
 
+    const finalStatus = status ?? watch.status
+    const finalEndDate = finalStatus === "in_progress" ? null : endDate
+
     const updatedWatches: DbWatch[] = entry.watches.map((w: DbWatch) =>
       w._id === watchId
         ? {
             ...w,
-            status: status ?? w.status,
+            status: finalStatus,
             startDate,
-            endDate,
+            endDate: finalEndDate,
             platform,
             notes,
           }
@@ -70,9 +73,9 @@ export const PATCH = async (request: Request, { params }: RouteParams) => {
       { _id: new ObjectId(entryId), "watches._id": watchId },
       {
         $set: {
-          "watches.$.status": status ?? watch.status,
+          "watches.$.status": finalStatus,
           "watches.$.startDate": startDate,
-          "watches.$.endDate": endDate,
+          "watches.$.endDate": finalEndDate,
           "watches.$.platform": platform,
           "watches.$.notes": notes,
           updatedAt: now,

@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useForm, useWatch, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { watchFormSchema, type WatchFormValues } from "@/lib/schemas"
@@ -38,6 +39,7 @@ export const WatchForm = ({
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors, isValid },
   } = useForm<WatchFormValues>({
     resolver: zodResolver(watchFormSchema),
@@ -52,12 +54,15 @@ export const WatchForm = ({
   const startDate = useWatch({ control, name: "startDate" })
   const endDate = useWatch({ control, name: "endDate" })
 
+  useEffect(() => {
+    if (isMovie && status === "finished" && startDate && !endDate) {
+      setValue("endDate", startDate, { shouldValidate: true })
+    }
+  }, [isMovie, status, startDate, endDate, setValue])
+
   const handleFormSubmit = async (data: WatchFormValues) => {
     await onSubmit(data)
   }
-
-  const showEndDateHelper =
-    status === "finished" && isMovie && startDate && !endDate
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -108,9 +113,7 @@ export const WatchForm = ({
         </div>
         {status === "finished" && (
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              End Date {isMovie ? "(optional)" : "*"}
-            </label>
+            <label className="text-sm font-medium">End Date *</label>
             <Controller
               name="endDate"
               control={control}
@@ -118,7 +121,7 @@ export const WatchForm = ({
                 <DatePicker
                   date={field.value}
                   onDateChange={field.onChange}
-                  placeholder={isMovie ? "Same as start" : "Pick date"}
+                  placeholder="Pick date"
                   defaultMonth={startDate}
                 />
               )}
@@ -131,12 +134,6 @@ export const WatchForm = ({
           </div>
         )}
       </div>
-
-      {showEndDateHelper && (
-        <p className="text-sm text-zinc-500">
-          For movies, end date defaults to start date.
-        </p>
-      )}
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Platform</label>

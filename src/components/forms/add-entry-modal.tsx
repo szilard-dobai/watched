@@ -74,6 +74,7 @@ export const AddEntryModal = ({
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<AddEntryFormValues>({
     resolver: zodResolver(addEntryFormSchema),
@@ -185,15 +186,11 @@ export const AddEntryModal = ({
           startDate: format(formValues.startDate!, "yyyy-MM-dd"),
         }
       } else {
-        const finalEndDate =
-          selectedResult.media_type === "movie" && !formValues.endDate
-            ? formValues.startDate!
-            : formValues.endDate!
         formData = {
           ...baseData,
           watchStatus: "finished",
           startDate: format(formValues.startDate!, "yyyy-MM-dd"),
-          endDate: format(finalEndDate, "yyyy-MM-dd"),
+          endDate: format(formValues.endDate!, "yyyy-MM-dd"),
         }
       }
 
@@ -212,6 +209,17 @@ export const AddEntryModal = ({
       setSelectedResult(null)
     }
   }, [detailsError])
+
+  useEffect(() => {
+    if (
+      selectedResult?.media_type === "movie" &&
+      watchStatus === "finished" &&
+      startDate &&
+      !endDate
+    ) {
+      setValue("endDate", startDate, { shouldValidate: true })
+    }
+  }, [selectedResult?.media_type, watchStatus, startDate, endDate, setValue])
 
   useEffect(() => {
     if (open) {
@@ -414,9 +422,7 @@ export const AddEntryModal = ({
                     </div>
                     {watchStatus === "finished" && (
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          End Date {isMovie ? "(optional)" : "*"}
-                        </label>
+                        <label className="text-sm font-medium">End Date *</label>
                         <Controller
                           name="endDate"
                           control={control}
@@ -424,9 +430,7 @@ export const AddEntryModal = ({
                             <DatePicker
                               date={field.value}
                               onDateChange={field.onChange}
-                              placeholder={
-                                isMovie ? "Same as start date" : "Pick end date"
-                              }
+                              placeholder="Pick end date"
                               defaultMonth={startDate}
                             />
                           )}
@@ -442,12 +446,6 @@ export const AddEntryModal = ({
                   {dateError && (
                     <p className="text-sm text-red-600 dark:text-red-400">
                       {dateError}
-                    </p>
-                  )}
-                  {watchStatus === "finished" && isMovie && !endDate && (
-                    <p className="text-sm text-zinc-500">
-                      For movies, end date defaults to start date if not
-                      specified.
                     </p>
                   )}
                 </div>

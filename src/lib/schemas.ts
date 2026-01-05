@@ -31,7 +31,19 @@ export const watchFormSchema = z
   })
   .refine(
     (data) => {
-      if (data.status === "finished" && data.endDate && data.startDate) {
+      if (data.status === "finished") {
+        return !!data.endDate
+      }
+      return true
+    },
+    {
+      message: "End date is required for finished watches",
+      path: ["endDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.endDate && data.startDate) {
         return data.endDate >= data.startDate
       }
       return true
@@ -68,7 +80,19 @@ export const addEntryFormSchema = z
   )
   .refine(
     (data) => {
-      if (data.watchStatus === "finished" && data.endDate && data.startDate) {
+      if (data.watchStatus === "finished") {
+        return !!data.endDate
+      }
+      return true
+    },
+    {
+      message: "End date is required for finished entries",
+      path: ["endDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.endDate && data.startDate) {
         return data.endDate >= data.startDate
       }
       return true

@@ -3,8 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query-keys"
 import { entryApi } from "@/lib/api/fetchers"
-import { computeEntryMeta } from "@/lib/entry-meta"
-import type { DbWatch, Entry, EntryFormData, WatchFormData } from "@/types"
+import type { Entry, EntryFormData, WatchFormData } from "@/types"
 
 export const useEntries = (listId: string | null) => {
   const queryClient = useQueryClient()
@@ -83,19 +82,9 @@ export const useEntries = (listId: string | null) => {
       if (!listId) throw new Error("No list selected")
       return entryApi.addWatch(listId, entryId, watchData)
     },
-    onSuccess: (newWatch, { entryId }) => {
+    onSuccess: () => {
       if (!listId) return
-      const now = new Date().toISOString()
-      queryClient.setQueryData<Entry[]>(
-        queryKeys.entries.byList(listId),
-        (old) =>
-          old?.map((e) => {
-            if (e._id !== entryId) return e
-            const updatedWatches = [...e.watches, newWatch]
-            const meta = computeEntryMeta(updatedWatches as DbWatch[])
-            return { ...e, watches: updatedWatches, ...meta, updatedAt: now }
-          }) ?? []
-      )
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.byList(listId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.entries.all })
     },
   })
@@ -105,19 +94,9 @@ export const useEntries = (listId: string | null) => {
       if (!listId) throw new Error("No list selected")
       return entryApi.deleteWatch(listId, entryId, watchId)
     },
-    onSuccess: (_, { entryId, watchId }) => {
+    onSuccess: () => {
       if (!listId) return
-      const now = new Date().toISOString()
-      queryClient.setQueryData<Entry[]>(
-        queryKeys.entries.byList(listId),
-        (old) =>
-          old?.map((e) => {
-            if (e._id !== entryId) return e
-            const updatedWatches = e.watches.filter((w) => w._id !== watchId)
-            const meta = computeEntryMeta(updatedWatches as DbWatch[])
-            return { ...e, watches: updatedWatches, ...meta, updatedAt: now }
-          }) ?? []
-      )
+      queryClient.invalidateQueries({ queryKey: queryKeys.entries.byList(listId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.entries.all })
     },
   })

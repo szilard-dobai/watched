@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import "./globals.css";
@@ -40,6 +41,7 @@ const RootLayout = ({
         <ThemeProvider>
           <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
